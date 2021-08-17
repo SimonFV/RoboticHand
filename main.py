@@ -1,10 +1,18 @@
+import tkinter.filedialog
 import tkinter as tk
+import ntpath
+
 
 root = tk.Tk()
 
 
 class App:
     def __init__(self, master):
+
+        # Algunos atributos
+        self.fileRute = ""
+        self.fileName = "Nuevo_archivo"
+        self.codeString = ""
 
         # Configuración de la ventana
 
@@ -18,11 +26,11 @@ class App:
         self.optionsFrame = tk.Frame(master, bg="gray20")
         self.optionsFrame.pack(ipady=5, ipadx=5, pady=5, padx=5, fill=tk.X, side=tk.TOP)
 
-        self.codeFrame = tk.Frame(master, bg="gray15")
-        self.codeFrame.pack(ipady=5, ipadx=5, pady=5, padx=5, fill=tk.BOTH, expand=1)
-
         self.logFrame = tk.Frame(master, bg="gray20")
         self.logFrame.pack(ipady=30, ipadx=5, pady=5, padx=5, fill=tk.X, side=tk.BOTTOM)
+
+        self.codeFrame = tk.Frame(master, bg="gray15")
+        self.codeFrame.pack(ipady=5, ipadx=5, pady=5, padx=5, fill=tk.BOTH, expand=1)
 
         # Botones
 
@@ -83,7 +91,7 @@ class App:
 
         # Labels
 
-        self.outLabel = tk.Label(
+        self.outputLabel = tk.Label(
             self.logFrame,
             text="Output:",
             bg="gray20",
@@ -96,14 +104,32 @@ class App:
             fill=tk.BOTH, expand=1, side=tk.BOTTOM
         )
 
-        self.fileLabel = tk.Label(
+        # Nombre del archivo
+        self.fileEntry = tk.Entry(
             self.optionsFrame,
-            text="Archivo.txt",
             bg="gray20",
             fg="gray70",
-            anchor="w",
             font=("Arial Black", 12),
-        ).pack(padx=20, side=tk.LEFT, fill=tk.X)
+            selectbackground="cyan4",
+            insertbackground="cyan2",
+            borderwidth=0,
+        )
+
+        # Edición de texto
+
+        self.textScroll = tk.Scrollbar(self.codeFrame)
+        self.codeText = tk.Text(
+            self.codeFrame,
+            font=("Consolas", 13),
+            background="gray15",
+            foreground="gray90",
+            selectbackground="cyan4",
+            insertbackground="cyan2",
+            undo=True,
+            yscrollcommand=self.textScroll.set,
+            borderwidth=0,
+        )
+        self.textScroll.config(command=self.codeText.yview)
 
     # ------------------------------------------------------------
     # Métodos
@@ -111,15 +137,42 @@ class App:
 
     # Crea un nuevo archivo
     def new(self):
-        print("Nuevo archivo creado!!")
+        self.fileName = "Nuevo_archivo"
+        self.fileEntry.delete(0, tk.END)
+        self.fileEntry.insert(0, self.fileName)
+        self.activate_text()
 
     # Carga un archivo con código
     def load(self):
-        print("Archivo cargado!!")
+        loadedFile = tkinter.filedialog.askopenfilename(
+            title="Abrir archivo", filetypes=[("Archivos de texto", "*.txt")]
+        )
+        self.fileRute = loadedFile
+        self.fileName = ntpath.basename(self.fileRute)
+        self.fileName = self.fileName[:-4]
+        self.fileEntry.delete(0, tk.END)
+        self.fileEntry.insert(0, self.fileName)
+        self.activate_text()
+
+        loadedFile = open(loadedFile, "r")
+        self.codeString = loadedFile.read()
+        self.codeText.insert(tk.END, self.codeString)
+        loadedFile.close()
 
     # Guarda el código en un archivo
     def save(self):
         print("Archivo guardado!!")
+
+    # Activa la zona de edición de texto para editar un archivo
+    def activate_text(self):
+        self.codeText.delete("1.0", tk.END)
+        self.textScroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.codeText.pack(fill=tk.BOTH)
+        self.fileEntry.pack(padx=20, side=tk.LEFT, fill=tk.X, expand=1)
+
+    # Imprime el mensaje en la salida
+    def log(self, msg):
+        print("printing...")
 
     # Compila el código
     def compile(self):
