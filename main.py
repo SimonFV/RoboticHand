@@ -1,4 +1,6 @@
+from tkinter.constants import FALSE
 import tkinter.filedialog
+import tkinter.messagebox
 import tkinter as tk
 import ntpath
 
@@ -11,8 +13,7 @@ class App:
 
         # Algunos atributos
         self.fileRute = ""
-        self.fileName = "Nuevo_archivo"
-        self.codeString = ""
+        self.fileName = ""
 
         # Configuración de la ventana
 
@@ -104,7 +105,7 @@ class App:
             fill=tk.BOTH, expand=1, side=tk.BOTTOM
         )
 
-        # Nombre del archivo
+        # Entry - Nombre del archivo
         self.fileEntry = tk.Entry(
             self.optionsFrame,
             bg="gray20",
@@ -124,6 +125,7 @@ class App:
             background="gray15",
             foreground="gray90",
             selectbackground="cyan4",
+            selectforeground="gray90",
             insertbackground="cyan2",
             undo=True,
             yscrollcommand=self.textScroll.set,
@@ -137,6 +139,14 @@ class App:
 
     # Crea un nuevo archivo
     def new(self):
+        if not self.is_file_saved() and self.codeText.get(1.0, "end-1c") != "":
+            response = tkinter.messagebox.askyesno(
+                "Archivo no guardado ", "¿Guardar archivo?"
+            )
+            if response == 1:
+                self.save()
+
+        self.fileRute = ""
         self.fileName = "Nuevo_archivo"
         self.fileEntry.delete(0, tk.END)
         self.fileEntry.insert(0, self.fileName)
@@ -144,23 +154,59 @@ class App:
 
     # Carga un archivo con código
     def load(self):
+        if not self.is_file_saved() and self.codeText.get(1.0, "end-1c") != "":
+            response = tkinter.messagebox.askyesno(
+                "Archivo no guardado ", "¿Guardar archivo?"
+            )
+            if response == 1:
+                self.save()
+
         loadedFile = tkinter.filedialog.askopenfilename(
-            title="Abrir archivo", filetypes=[("Archivos de texto", "*.txt")]
+            title="Abrir archivo", filetypes=[("Archivos JERS", "*.jers")]
         )
+        if not loadedFile:
+            return
         self.fileRute = loadedFile
         self.fileName = ntpath.basename(self.fileRute)
-        self.fileName = self.fileName[:-4]
+        self.fileName = self.fileName[:-5]
         self.fileEntry.delete(0, tk.END)
         self.fileEntry.insert(0, self.fileName)
         self.activate_text()
 
         loadedFile = open(loadedFile, "r")
-        self.codeString = loadedFile.read()
-        self.codeText.insert(tk.END, self.codeString)
+        self.codeText.insert(tk.END, loadedFile.read())
         loadedFile.close()
 
     # Guarda el código en un archivo
     def save(self):
+        if self.is_file_saved():
+            return
+        # Guardar como...
+        if self.fileRute == "" or self.fileName != self.fileEntry.get():
+            savedFile = tkinter.filedialog.asksaveasfilename(
+                defaultextension=".*",
+                title="Guardar archivo",
+                filetypes=[("Archivo JERS", "*.jers")],
+                initialfile=self.fileEntry.get(),
+            )
+            if not savedFile:
+                return
+            self.fileRute = savedFile
+            self.fileName = ntpath.basename(self.fileRute)
+            self.fileName = self.fileName[:-5]
+            self.fileEntry.delete(0, tk.END)
+            self.fileEntry.insert(0, self.fileName)
+
+            savedFile = open(savedFile, "w")
+            savedFile.write(self.codeText.get(1.0, "end-1c"))
+            savedFile.close()
+
+        # Guardar en la misma ruta
+        else:
+            savedFile = open(self.fileRute, "w")
+            savedFile.write(self.codeText.get(1.0, "end-1c"))
+            savedFile.close()
+
         print("Archivo guardado!!")
 
     # Activa la zona de edición de texto para editar un archivo
@@ -169,6 +215,21 @@ class App:
         self.textScroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.codeText.pack(fill=tk.BOTH)
         self.fileEntry.pack(padx=20, side=tk.LEFT, fill=tk.X, expand=1)
+
+    # Verifica si los cambios en el archivo estan guardados
+    def is_file_saved(self):
+        if not self.codeText.winfo_ismapped():
+            return True
+        try:
+            checkFile = open(self.fileRute, "r")
+            if self.codeText.get(1.0, "end-1c") == checkFile.read():
+                checkFile.close()
+                if self.fileName != self.fileEntry.get():
+                    return False
+                return True
+        except:
+            pass
+        return False
 
     # Imprime el mensaje en la salida
     def log(self, msg):
