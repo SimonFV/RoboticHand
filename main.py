@@ -1,13 +1,37 @@
-from tkinter.constants import FALSE
 import tkinter.filedialog
 import tkinter.messagebox
+import tkinter.font
 import tkinter as tk
 import ntpath
 
 
-root = tk.Tk()
+# Canvas para los numeros de las lineas
+class customLineCanvas(tk.Canvas):
+    def __init__(self, *args, **kwargs):
+        tk.Canvas.__init__(self, *args, **kwargs)
+        self.textwidget = None
+        self.fontSize = 12
+        self.font = tkinter.font.Font(family="monospace", size=self.fontSize)
+
+    def attach(self, text_widget):
+        self.textwidget = text_widget
+
+    def redraw(self, *args):
+        self.delete("all")
+        i = self.textwidget.index("@0,0")
+        while True:
+            dline = self.textwidget.dlineinfo(i)
+            if dline is None:
+                break
+            y = dline[1]
+            linenum = str(i).split(".")[0]
+            self.create_text(
+                1, y, anchor="nw", font=self.font, text=linenum, fill="cyan3"
+            )
+            i = self.textwidget.index("%s+1line" % i)
 
 
+# Clase principal
 class App:
     def __init__(self, master):
 
@@ -21,6 +45,7 @@ class App:
         master.geometry("800x600")
         master.configure(bg="gray20")
         master.iconbitmap("img/robohand_ico.ico")
+        master.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Frames para dividir la interfaz en secciones
 
@@ -119,6 +144,7 @@ class App:
         # Edición de texto
 
         self.textScroll = tk.Scrollbar(self.codeFrame)
+        self.textScrollx = tk.Scrollbar(self.codeFrame, orient="horizontal")
         self.codeText = tk.Text(
             self.codeFrame,
             font=("Consolas", 13),
@@ -127,11 +153,25 @@ class App:
             selectbackground="cyan4",
             selectforeground="gray90",
             insertbackground="cyan2",
+            wrap="none",
             undo=True,
-            yscrollcommand=self.textScroll.set,
+            yscrollcommand=self.on_text_scroll,
+            xscrollcommand=self.textScrollx.set,
             borderwidth=0,
         )
-        self.textScroll.config(command=self.codeText.yview)
+        self.textScroll.config(command=self.scroll_both)
+        self.textScrollx.config(command=self.codeText.xview)
+
+        self.lineCanvas = customLineCanvas(
+            self.codeFrame,
+            width=40,
+            background="gray17",
+            borderwidth=0,
+            highlightthickness=0,
+        )
+        self.lineCanvas.attach(self.codeText)
+
+        self.codeText.bind("<<Modified>>", self.line_update)
 
     # ------------------------------------------------------------
     # Métodos
@@ -139,7 +179,7 @@ class App:
 
     # Crea un nuevo archivo
     def new(self):
-        if not self.is_file_saved() and self.codeText.get(1.0, "end-1c") != "":
+        if not self.is_file_saved() and self.codeText.get("1.0", "end-1c") != "":
             response = tkinter.messagebox.askyesno(
                 "Archivo no guardado ", "¿Guardar archivo?"
             )
@@ -154,7 +194,7 @@ class App:
 
     # Carga un archivo con código
     def load(self):
-        if not self.is_file_saved() and self.codeText.get(1.0, "end-1c") != "":
+        if not self.is_file_saved() and self.codeText.get("1.0", "end-1c") != "":
             response = tkinter.messagebox.askyesno(
                 "Archivo no guardado ", "¿Guardar archivo?"
             )
@@ -198,23 +238,41 @@ class App:
             self.fileEntry.insert(0, self.fileName)
 
             savedFile = open(savedFile, "w")
-            savedFile.write(self.codeText.get(1.0, "end-1c"))
+            savedFile.write(self.codeText.get("1.0", "end-1c"))
             savedFile.close()
 
         # Guardar en la misma ruta
         else:
             savedFile = open(self.fileRute, "w")
-            savedFile.write(self.codeText.get(1.0, "end-1c"))
+            savedFile.write(self.codeText.get("1.0", "end-1c"))
             savedFile.close()
 
         print("Archivo guardado!!")
 
     # Activa la zona de edición de texto para editar un archivo
     def activate_text(self):
-        self.codeText.delete("1.0", tk.END)
         self.textScroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.codeText.pack(fill=tk.BOTH)
+        self.textScrollx.pack(side=tk.BOTTOM, fill=tk.X)
+        self.codeText.pack(side=tk.RIGHT, padx=4, fill=tk.BOTH, expand=1)
+        self.lineCanvas.pack(side=tk.LEFT, fill=tk.Y)
         self.fileEntry.pack(padx=20, side=tk.LEFT, fill=tk.X, expand=1)
+        self.codeText.delete("1.0", tk.END)
+        self.line_update()
+
+    # Mueve los widgets de codigo y lineas con la misma scrollbar
+    def scroll_both(self, *args):
+        self.codeText.yview(*args)
+        self.lineCanvas.redraw()
+
+    # Mueve la barra y ambos textos cuando se usa el scroll del mouse
+    def on_text_scroll(self, *args):
+        self.textScroll.set(*args)
+        self.scroll_both("moveto", args[0])
+
+    # Actualiza el widget con los numeros de las lineas
+    def line_update(self, *args):
+        self.lineCanvas.redraw()
+        self.codeText.edit_modified(False)
 
     # Verifica si los cambios en el archivo estan guardados
     def is_file_saved(self):
@@ -222,7 +280,7 @@ class App:
             return True
         try:
             checkFile = open(self.fileRute, "r")
-            if self.codeText.get(1.0, "end-1c") == checkFile.read():
+            if self.codeText.get("1.0", "end-1c") == checkFile.read():
                 checkFile.close()
                 if self.fileName != self.fileEntry.get():
                     return False
@@ -230,6 +288,16 @@ class App:
         except:
             pass
         return False
+
+    # Ofrece la opción de guardar el archivo antes de cerrar la aplicación
+    def on_closing(self):
+        if not self.is_file_saved() and self.codeText.get("1.0", "end-1c") != "":
+            response = tkinter.messagebox.askyesno(
+                "Archivo no guardado ", "¿Guardar archivo?"
+            )
+            if response == 1:
+                self.save()
+        root.destroy()
 
     # Imprime el mensaje en la salida
     def log(self, msg):
@@ -245,5 +313,7 @@ class App:
 
 
 # Inicializa la aplicación
-app = App(root)
-root.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = App(root)
+    root.mainloop()
