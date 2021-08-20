@@ -1,11 +1,12 @@
-from tkinter.constants import BOTTOM, NSEW
+from os import spawnl
+from posixpath import split
 import tkinter.filedialog
 import tkinter.messagebox
 import tkinter.font
 import tkinter.ttk
 import tkinter as tk
 import ntpath
-
+import compilation as comp
 
 # Canvas para los numeros de las lineas
 class customLineCanvas(tk.Canvas):
@@ -98,7 +99,7 @@ class App:
         self.compImg = tk.PhotoImage(file="img/comp_img.png")
         self.compButton = tk.Button(
             self.optionsFrame,
-            command=self.compile,
+            command=self.compile_code,
             image=self.compImg,
             borderwidth=0,
             bg="gray20",
@@ -125,7 +126,7 @@ class App:
             font=("Arial", 10),
             activebackground="gray40",
         )
-        self.showButton.grid(row=0, column=1)
+        self.showButton.grid(row=0, column=1, padx=5)
 
         self.clearButton = tk.Button(
             self.logFrame,
@@ -136,7 +137,7 @@ class App:
             fg="gray80",
             font=("Arial", 10),
             activebackground="gray40",
-        ).grid(row=0, column=2)
+        ).grid(row=0, column=2, padx=5)
 
         self.lockVar = tk.IntVar()
         self.lockButton = tk.Checkbutton(
@@ -151,7 +152,7 @@ class App:
             onvalue=1,
             offvalue=0,
         )
-        self.lockButton.grid(row=0, column=3)
+        self.lockButton.grid(row=0, column=3, padx=5)
 
         # Entry - Nombre del archivo
         self.fileEntry = tk.Entry(
@@ -180,7 +181,6 @@ class App:
             font=("Consolas", 13),
             height=8,
             background="gray18",
-            foreground="gray90",
             selectbackground="magenta4",
             selectforeground="gray90",
             insertbackground="magenta2",
@@ -190,6 +190,11 @@ class App:
         self.logText.grid(row=1, column=0, columnspan=4, sticky=tk.NSEW)
         self.outScroll.config(command=self.logText.yview)
         self.outScroll.grid(row=1, column=4, sticky=tk.NS)
+        self.logText.tag_configure("info", foreground="deep sky blue")
+        self.logText.tag_configure("warning", foreground="yellow2")
+        self.logText.tag_configure("error", foreground="orange red")
+        self.logText.tag_configure("success", foreground="SpringGreen2")
+        self.logText.tag_configure("normal", foreground="gray90")
         self.logText.config(state="disabled")
 
         # Edición de texto
@@ -226,6 +231,7 @@ class App:
         self.textScrollx.pack(side=tk.BOTTOM, fill=tk.X)
         self.codeText.pack(side=tk.RIGHT, padx=4, fill=tk.BOTH, expand=1)
         self.codeText.bind("<<Modified>>", self.line_update)
+        self.codeText.tag_configure("error_line", background="red4")
         self.codeText.config(state="disabled")
 
     # ------------------------------------------------------------
@@ -302,7 +308,7 @@ class App:
             savedFile.write(self.codeText.get("1.0", "end-1c"))
             savedFile.close()
 
-        self.log("Archivo guardado!!\n")
+        self.log("Archivo guardado!!\n", type_msg="info")
 
     # Activa la zona de edición de texto para editar un archivo
     def activate_text(self):
@@ -322,8 +328,9 @@ class App:
         self.textScroll.set(*args)
         self.scroll_both("moveto", args[0])
 
-    # Actualiza el widget con los numeros de las lineas
+    # Actualiza el widget con los numeros de las líneas
     def line_update(self, *args):
+        self.codeText.tag_remove("error_line", 1.0, "end")
         self.lineCanvas.redraw()
         self.codeText.edit_modified(False)
 
@@ -365,6 +372,10 @@ class App:
             self.isShown = True
             self.showButton.config(text="Ocultar")
 
+    # Resalta una línea en el código
+    def highlight(self, line):
+        self.codeText.tag_add("error_line", str(line) + ".0", str(line + 1) + ".0")
+
     # Limpia la salida
     def clear_log(self):
         self.logText.config(state="normal")
@@ -372,20 +383,20 @@ class App:
         self.logText.config(state="disabled")
 
     # Imprime el mensaje en la salida
-    def log(self, msg):
+    def log(self, msg, type_msg="normal"):
         self.logText.config(state="normal")
-        self.logText.insert(tk.END, msg)
+        self.logText.insert(tk.END, msg, type_msg)
         if self.lockVar.get() == 1:
             self.logText.see(tk.END)
         self.logText.config(state="disabled")
 
     # Compila el código
-    def compile(self):
-        self.log("Compilando!!\n")
+    def compile_code(self):
+        comp.compiling(self)
 
     # Compila y ejecuta el código
     def compile_run(self):
-        self.log("Compilando y ejecutando!!\n")
+        comp.compiling_running(self)
 
 
 # Inicializa la aplicación
