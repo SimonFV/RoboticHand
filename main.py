@@ -57,10 +57,11 @@ class App:
 
         self.logFrame = tk.Frame(master, bg="gray20")
         self.logFrame.columnconfigure(0, weight=1)
+        self.logFrame.rowconfigure(0, weight=1)
         self.logFrame.pack(side=tk.BOTTOM, fill=tk.BOTH, padx=5, pady=5)
 
         self.codeFrame = tk.Frame(master, bg="gray15")
-        self.codeFrame.pack(side=tk.TOP, fill=tk.BOTH, padx=5, pady=5)
+        self.codeFrame.pack(side=tk.BOTTOM, fill=tk.BOTH, padx=5, pady=5, expand=True)
 
         # Botones
 
@@ -189,6 +190,7 @@ class App:
         self.logText.grid(row=1, column=0, columnspan=4, sticky=tk.NSEW)
         self.outScroll.config(command=self.logText.yview)
         self.outScroll.grid(row=1, column=4, sticky=tk.NS)
+        self.logText.config(state="disabled")
 
         # Edición de texto
 
