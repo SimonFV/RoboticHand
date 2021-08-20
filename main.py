@@ -1,6 +1,8 @@
+from tkinter.constants import BOTTOM, NSEW
 import tkinter.filedialog
 import tkinter.messagebox
 import tkinter.font
+import tkinter.ttk
 import tkinter as tk
 import ntpath
 
@@ -26,7 +28,7 @@ class customLineCanvas(tk.Canvas):
             y = dline[1]
             linenum = str(i).split(".")[0]
             self.create_text(
-                1, y, anchor="nw", font=self.font, text=linenum, fill="cyan3"
+                1, y + 1, anchor="nw", font=self.font, text=linenum, fill="cyan3"
             )
             i = self.textwidget.index("%s+1line" % i)
 
@@ -38,6 +40,7 @@ class App:
         # Algunos atributos
         self.fileRute = ""
         self.fileName = ""
+        self.isShown = True
 
         # Configuración de la ventana
 
@@ -53,17 +56,17 @@ class App:
         self.optionsFrame.pack(ipady=5, ipadx=5, pady=5, padx=5, fill=tk.X, side=tk.TOP)
 
         self.logFrame = tk.Frame(master, bg="gray20")
-        self.logFrame.pack(ipady=30, ipadx=5, pady=5, padx=5, fill=tk.X, side=tk.BOTTOM)
+        self.logFrame.columnconfigure(0, weight=1)
+        self.logFrame.pack(side=tk.BOTTOM, fill=tk.BOTH, padx=5, pady=5)
 
         self.codeFrame = tk.Frame(master, bg="gray15")
-        self.codeFrame.pack(ipady=5, ipadx=5, pady=5, padx=5, fill=tk.BOTH, expand=1)
+        self.codeFrame.pack(side=tk.TOP, fill=tk.BOTH, padx=5, pady=5)
 
         # Botones
 
         self.newImg = tk.PhotoImage(file="img/new_img.png")
         self.newButton = tk.Button(
             self.optionsFrame,
-            text="Nuevo",
             command=self.new,
             image=self.newImg,
             borderwidth=0,
@@ -74,7 +77,6 @@ class App:
         self.loadImg = tk.PhotoImage(file="img/load_img.png")
         self.loadButton = tk.Button(
             self.optionsFrame,
-            text="Cargar",
             command=self.load,
             image=self.loadImg,
             borderwidth=0,
@@ -85,7 +87,6 @@ class App:
         self.saveImg = tk.PhotoImage(file="img/save_img.png")
         self.saveButton = tk.Button(
             self.optionsFrame,
-            text="Guardar",
             command=self.save,
             image=self.saveImg,
             borderwidth=0,
@@ -96,7 +97,6 @@ class App:
         self.compImg = tk.PhotoImage(file="img/comp_img.png")
         self.compButton = tk.Button(
             self.optionsFrame,
-            text="Compilar",
             command=self.compile,
             image=self.compImg,
             borderwidth=0,
@@ -107,7 +107,6 @@ class App:
         self.runImg = tk.PhotoImage(file="img/run_img.png")
         self.runButton = tk.Button(
             self.optionsFrame,
-            text="Comp/Ejec",
             command=self.compile_run,
             image=self.runImg,
             borderwidth=0,
@@ -115,20 +114,43 @@ class App:
             activebackground="gray25",
         ).pack(ipadx=3, ipady=3, padx=5, side=tk.LEFT)
 
-        # Labels
-
-        self.outputLabel = tk.Label(
+        self.showButton = tk.Button(
             self.logFrame,
-            text="Output:",
-            bg="gray20",
-            fg="gray70",
-            anchor="w",
-            font=("Arial Black", 12),
-        ).pack(side=tk.TOP, fill=tk.X)
-
-        self.logLabel = tk.Label(self.logFrame, bg="gray17").pack(
-            fill=tk.BOTH, expand=1, side=tk.BOTTOM
+            text="Ocultar",
+            command=self.hide_show_log,
+            borderwidth=0,
+            bg="gray22",
+            fg="gray80",
+            font=("Arial", 10),
+            activebackground="gray40",
         )
+        self.showButton.grid(row=0, column=1)
+
+        self.clearButton = tk.Button(
+            self.logFrame,
+            text="Limpiar",
+            command=self.clear_log,
+            borderwidth=0,
+            bg="gray22",
+            fg="gray80",
+            font=("Arial", 10),
+            activebackground="gray40",
+        ).grid(row=0, column=2)
+
+        self.lockVar = tk.IntVar()
+        self.lockButton = tk.Checkbutton(
+            self.logFrame,
+            text="Auto-scroll",
+            borderwidth=0,
+            bg="gray22",
+            fg="gray80",
+            font=("Arial", 10),
+            activebackground="gray40",
+            variable=self.lockVar,
+            onvalue=1,
+            offvalue=0,
+        )
+        self.lockButton.grid(row=0, column=3)
 
         # Entry - Nombre del archivo
         self.fileEntry = tk.Entry(
@@ -140,6 +162,33 @@ class App:
             insertbackground="cyan2",
             borderwidth=0,
         )
+
+        # Salida
+
+        self.outputLabel = tk.Label(
+            self.logFrame,
+            text="Output:",
+            bg="gray20",
+            fg="gray70",
+            font=("Arial Black", 12),
+        ).grid(row=0, column=0, sticky=tk.W)
+
+        self.outScroll = tk.Scrollbar(self.logFrame)
+        self.logText = tk.Text(
+            self.logFrame,
+            font=("Consolas", 13),
+            height=8,
+            background="gray18",
+            foreground="gray90",
+            selectbackground="magenta4",
+            selectforeground="gray90",
+            insertbackground="magenta2",
+            yscrollcommand=self.outScroll.set,
+            borderwidth=0,
+        )
+        self.logText.grid(row=1, column=0, columnspan=4, sticky=tk.NSEW)
+        self.outScroll.config(command=self.logText.yview)
+        self.outScroll.grid(row=1, column=4, sticky=tk.NS)
 
         # Edición de texto
 
@@ -171,7 +220,11 @@ class App:
         )
         self.lineCanvas.attach(self.codeText)
 
+        self.textScroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.textScrollx.pack(side=tk.BOTTOM, fill=tk.X)
+        self.codeText.pack(side=tk.RIGHT, padx=4, fill=tk.BOTH, expand=1)
         self.codeText.bind("<<Modified>>", self.line_update)
+        self.codeText.config(state="disabled")
 
     # ------------------------------------------------------------
     # Métodos
@@ -247,14 +300,12 @@ class App:
             savedFile.write(self.codeText.get("1.0", "end-1c"))
             savedFile.close()
 
-        print("Archivo guardado!!")
+        self.log("Archivo guardado!!\n")
 
     # Activa la zona de edición de texto para editar un archivo
     def activate_text(self):
-        self.textScroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.textScrollx.pack(side=tk.BOTTOM, fill=tk.X)
-        self.codeText.pack(side=tk.RIGHT, padx=4, fill=tk.BOTH, expand=1)
         self.lineCanvas.pack(side=tk.LEFT, fill=tk.Y)
+        self.codeText.config(state="normal")
         self.fileEntry.pack(padx=20, side=tk.LEFT, fill=tk.X, expand=1)
         self.codeText.delete("1.0", tk.END)
         self.line_update()
@@ -299,17 +350,40 @@ class App:
                 self.save()
         root.destroy()
 
+    # Oculta o muestra la salida
+    def hide_show_log(self):
+        if self.isShown:
+            self.logText.grid_remove()
+            self.outScroll.grid_remove()
+            self.isShown = False
+            self.showButton.config(text="Mostrar")
+        else:
+            self.logText.grid()
+            self.outScroll.grid()
+            self.isShown = True
+            self.showButton.config(text="Ocultar")
+
+    # Limpia la salida
+    def clear_log(self):
+        self.logText.config(state="normal")
+        self.logText.delete("1.0", tk.END)
+        self.logText.config(state="disabled")
+
     # Imprime el mensaje en la salida
     def log(self, msg):
-        print("printing...")
+        self.logText.config(state="normal")
+        self.logText.insert(tk.END, msg)
+        if self.lockVar.get() == 1:
+            self.logText.see(tk.END)
+        self.logText.config(state="disabled")
 
     # Compila el código
     def compile(self):
-        print("Compilando!!")
+        self.log("Compilando!!\n")
 
     # Compila y ejecuta el código
     def compile_run(self):
-        print("Compilando y ejecutando!!")
+        self.log("Compilando y ejecutando!!\n")
 
 
 # Inicializa la aplicación
