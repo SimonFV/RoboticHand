@@ -169,7 +169,7 @@ class App:
 
         self.outputLabel = tk.Label(
             self.logFrame,
-            text="Output:",
+            text="Salida:",
             bg="gray20",
             fg="gray70",
             font=("Arial Black", 12),
@@ -389,6 +389,10 @@ class App:
         if self.lockVar.get() == 1:
             self.logText.see(tk.END)
         self.logText.config(state="disabled")
+
+    # Retorna el texto para compilarlo
+    def get_text(self):
+        return self.codeText.get("1.0", "end-1c")
 
     # Compila el código
     def compile_code(self):
