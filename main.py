@@ -139,7 +139,7 @@ class App:
             activebackground="gray40",
         ).grid(row=0, column=2, padx=5)
 
-        self.lockVar = tk.IntVar()
+        self.lockVar = tk.IntVar(value=1)
         self.lockButton = tk.Checkbutton(
             self.logFrame,
             text="Auto-scroll",

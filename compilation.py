@@ -1,131 +1,175 @@
-import ply.lex as lex
+import lexer as lx
 import ply.yacc as yacc
 import sys
 
-error_msg = ""
+from lexer import tokens
 
-# ----------------------------------------------------------
-# LEXER
-# ----------------------------------------------------------
+syntax_error = ""
+semantic_error = ""
+line_of_error = 1
 
-# Lista de Tokens
-tokens = ["ID", "INT", "TRUE", "FALSE"]  # check  # check  # check  # check
-""""AND",
-    "OR",
-    "L_PAREN",
-    "R_PAREN",
-    "L_CURLYBRACKET",
-    "R_CURLYBRACKET",
-    "L_SQUAREBRACKET",
-    "R_SQUAREBRACKET",
-    "PLUS",
-    "MINUS",
-    "MULT",
-    "DIV",
-    "POW",
-    "OPERA",
-    "EQUAL",
-    "ASSIGN",
-    "NOT_EQUAL",
-    "GREATER_EQUAL_THAN",
-    "LESS_EQUAL_THAN",
-    "GREATER_THAN",
-    "LESS_THAN",
-    "LET",
-    "COMMA",
-    "DOT",
-    "SEMICOLON",
-    "COMMENT",
-    "FOR",
-    "RANGE",
-    "IN",
-    "BEFORE",
-    "UNTIL",
-    "WHILE",
-    "LOOP",
-    "BREAK",
-    "IF",
-    "ELSE",
-    "FUNCTION",
-    "ARROW",
-    "TYPE_INT",
-    "TYPE_BOOL",
-    "RETURN",
-    "PRINT",
-    "MOVE",
-    "FINGER_P",  # PULGAR
-    "FINGER_I",  # INDICE
-    "FINGER_M",  # MEDIO
-    "FINGER_A",  # ANULAR
-    "FINGER_Q",  # MEÑIQUE
-    "ALL_FINGERS",
-    "DELAY",
-    "SECONDS",
-    "MILISECONDS",
-    "MINUTES","""
+# Reglas del parser
+
+precedence = (
+    ("left", "PLUS", "MINUS"),
+    ("left", "MULT", "DIV"),
+    ("left", "OR"),
+    ("left", "AND"),
+)
+
+# Tabla de valores
+variables = {}
 
 
-# Expresiones regulares
-
-t_ID = r"[a-zA-Z_#?][a-zA-Z_#?0-9]{2,14}"
-
-
-def t_newline(t):
-    r"\n+"
-    t.lexer.lineno += len(t.value)
-
-
-t_ignore = r" \t"
+def p_start(p):
+    """
+    start : expressions
+          | empty
+    """
+    print(p[1])
+    run(p[1])
+    print(variables)
 
 
-def t_INT(t):
-    r"\d+"
-    t.value = int(t.value)
-    return t
+def p_expressions(p):
+    """
+    expressions : expression expressions
+                | expression
+    """
+    if len(p) == 3:
+        p[0] = (p[1], p[2])
+    else:
+        p[0] = p[1]
 
 
-def t_TRUE(t):
-    r"True"
-    t.value = True
-    return t
+def p_expression(p):
+    """
+    expression : assign
+    """
+    p[0] = p[1]
 
 
-def t_FALSE(t):
-    r"False"
-    t.value = False
-    return t
+def p_empty(p):
+    """
+    empty :
+    """
+    p[0] = None
 
 
-def t_error(t):
-    global error_msg
-    error_msg += (
-        "Caracter ilegal " + str(t.value[0]) + " en la línea " + str(t.lineno) + ".\n"
-    )
-    t.lexer.skip(1)
+def p_assign(p):
+    """
+    assign : LET ID ASSIGN int_expression SEMICOLON
+           | LET ID ASSIGN bool_expression SEMICOLON
+    """
+    p[0] = (p[3], p[2], p[4])
 
 
-lexer = lex.lex()
+def p_int_expression(p):
+    """
+    int_expression : OPERA L_PAREN PLUS COMMA int_expression COMMA int_expression R_PAREN
+                   | OPERA L_PAREN MINUS COMMA int_expression COMMA int_expression R_PAREN
+                   | OPERA L_PAREN MULT COMMA int_expression COMMA int_expression R_PAREN
+                   | OPERA L_PAREN DIV COMMA int_expression COMMA int_expression R_PAREN
+                   | OPERA L_PAREN POW COMMA int_expression COMMA int_expression R_PAREN
+                   | L_PAREN int_expression R_PAREN
+                   | ID
+                   | INT
+    """
+    if len(p) == 8:
+        p[0] = (p[3], p[5], p[7])
+    elif len(p) == 4:
+        p[0] = p[2]
+    else:
+        p[0] = p[1]
+
+
+def p_bool_expression(p):
+    """
+    bool_expression : bool_expression OR bool_expression
+                    | bool_expression AND bool_expression
+                    | L_PAREN bool_expression R_PAREN
+                    | ID
+                    | TRUE
+                    | FALSE
+    """
+    if len(p) == 4 and p[1] != "(":
+        p[0] = (p[2], p[1], p[3])
+    elif len(p) == 4:
+        p[0] = p[2]
+    else:
+        p[0] = p[1]
+
+
+def p_error(p):
+    global syntax_error
+    if p:
+        syntax_error += (
+            "Error de sintaxis en [ "
+            + str(p.value)
+            + " ], linea: "
+            + str(p.lineno)
+            + "\n"
+        )
+    else:
+        syntax_error += "Error de sintaxis." + "\n"
+
+
+parser = yacc.yacc()
+
 
 # Inicia la compilación del código
 def compiling(app):
-    global error_msg
-    error_msg = ""
-    lexer.lineno = 1
-    app.log("Compilando!!\n", type_msg="info")
+    global semantic_error
+    global syntax_error
+    semantic_error = ""
+    syntax_error = ""
+    app.log("Compilando...\n", type_msg="info")
     app.log("Tokens encontrados:\n", type_msg="info")
+    lx.clear()
 
     # Solicita y realiza el analisis lexico al codigo
-    lexer.input(app.get_text())
+    lx.lexer.input(app.get_text())
     while True:
-        tok = lexer.token()
+        tok = lx.lexer.token()
         if not tok:
-            print(error_msg)
+            app.log(lx.get_error() + "\n", type_msg="error")
             break
         else:
-            print(tok)
+            app.log(str(tok) + "\n", type_msg="success")
+    if lx.get_error() != "":  # Detiene la compilacion
+        return
+    lx.clear()
+
+    # Analisis sintactico
+    parser.parse(app.get_text())
+    if syntax_error != "":  # Detiene la compilacion
+        app.log(syntax_error, type_msg="error")
+        return
+
+    app.log(semantic_error, type_msg="error")
 
 
 # Inicia la compilación y ejecución del código
 def compiling_running(app):
     compiling(app)
     app.log("Ejecutando!!\n", type_msg="success")
+
+
+def run(p):
+    global variables
+    global semantic_error
+    if type(p) == tuple:
+        if p[0] == "=":  # Asignacion de variables
+            var = run(p[2])
+            if (p[1] in variables) and type(variables[p[1]]) != type(var):
+                semantic_error += (
+                    "La variable " + str(p[1]) + " ya se definio con otro tipo."
+                )
+            else:
+                variables[p[1]] = var
+
+        else:  # Recorre el resto del arbol
+            for i in range(len(p)):
+                run(p[i])
+    else:
+        return p
