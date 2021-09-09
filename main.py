@@ -396,10 +396,16 @@ class App:
 
     # Compila el código
     def compile_code(self):
+        if self.get_text() == "":
+            self.log("Sin código...\n", type_msg="warning")
+            return
         comp.compiling(self)
 
     # Compila y ejecuta el código
     def compile_run(self):
+        if self.get_text() == "":
+            self.log("Sin código...\n", type_msg="warning")
+            return
         comp.compiling_running(self)
 
 

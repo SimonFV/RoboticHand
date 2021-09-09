@@ -6,35 +6,37 @@ from lexer import tokens
 
 syntax_error = ""
 semantic_error = ""
-line_of_error = 1
+line_error = 1
 
 # Reglas del parser
 
 precedence = (
-    ("left", "PLUS", "MINUS"),
-    ("left", "MULT", "DIV"),
     ("left", "OR"),
     ("left", "AND"),
 )
 
+# Arbol
+tree = ()
+
 # Tabla de valores
-variables = {}
+variables = {}  # {nombre: valor}
 
 
 def p_start(p):
     """
-    start : expressions
+    start : statements
           | empty
     """
-    print(p[1])
-    run(p[1])
-    print(variables)
+    global tree
+    global variables
+    tree = p[1]
+    variables = {}
 
 
-def p_expressions(p):
+def p_statements(p):
     """
-    expressions : expression expressions
-                | expression
+    statements : statement statements
+                | statement
     """
     if len(p) == 3:
         p[0] = (p[1], p[2])
@@ -42,9 +44,9 @@ def p_expressions(p):
         p[0] = p[1]
 
 
-def p_expression(p):
+def p_statement(p):
     """
-    expression : assign
+    statement : assign
     """
     p[0] = p[1]
 
@@ -58,60 +60,54 @@ def p_empty(p):
 
 def p_assign(p):
     """
-    assign : LET ID ASSIGN int_expression SEMICOLON
-           | LET ID ASSIGN bool_expression SEMICOLON
+    assign : LET ID ASSIGN expression SEMICOLON
     """
-    p[0] = (p[3], p[2], p[4])
+    p[0] = (p[3], p[2], p[4], p.lineno(1))
 
 
-def p_int_expression(p):
+def p_expression(p):
     """
-    int_expression : OPERA L_PAREN PLUS COMMA int_expression COMMA int_expression R_PAREN
-                   | OPERA L_PAREN MINUS COMMA int_expression COMMA int_expression R_PAREN
-                   | OPERA L_PAREN MULT COMMA int_expression COMMA int_expression R_PAREN
-                   | OPERA L_PAREN DIV COMMA int_expression COMMA int_expression R_PAREN
-                   | OPERA L_PAREN POW COMMA int_expression COMMA int_expression R_PAREN
-                   | L_PAREN int_expression R_PAREN
-                   | ID
-                   | INT
+    expression : OPERA L_PAREN PLUS COMMA expression COMMA expression R_PAREN
+                | OPERA L_PAREN MINUS COMMA expression COMMA expression R_PAREN
+                | OPERA L_PAREN MULT COMMA expression COMMA expression R_PAREN
+                | OPERA L_PAREN DIV COMMA expression COMMA expression R_PAREN
+                | OPERA L_PAREN POW COMMA expression COMMA expression R_PAREN
+                | expression OR expression
+                | expression AND expression
+                | L_PAREN expression R_PAREN
+                | ID
+                | INT
+                | TRUE
+                | FALSE
     """
-    if len(p) == 8:
-        p[0] = (p[3], p[5], p[7])
+    if len(p) == 9:
+        p[0] = (p[3], p[5], p[7], p.lineno(1))
+    elif len(p) == 4 and p[1] != "(":
+        p[0] = (p[2], p[1], p[3], p.lineno(1))
     elif len(p) == 4:
         p[0] = p[2]
     else:
-        p[0] = p[1]
-
-
-def p_bool_expression(p):
-    """
-    bool_expression : bool_expression OR bool_expression
-                    | bool_expression AND bool_expression
-                    | L_PAREN bool_expression R_PAREN
-                    | ID
-                    | TRUE
-                    | FALSE
-    """
-    if len(p) == 4 and p[1] != "(":
-        p[0] = (p[2], p[1], p[3])
-    elif len(p) == 4:
-        p[0] = p[2]
-    else:
-        p[0] = p[1]
+        if p[1] == "True":
+            p[0] = True
+        elif p[1] == "False":
+            p[0] = False
+        else:
+            p[0] = p[1]
+    print(p[0])
 
 
 def p_error(p):
     global syntax_error
     if p:
         syntax_error += (
-            "Error de sintaxis en [ "
-            + str(p.value)
-            + " ], linea: "
+            "Línea "
             + str(p.lineno)
-            + "\n"
+            + ": Error de sintaxis en [ "
+            + str(p.value)
+            + " ]\n"
         )
     else:
-        syntax_error += "Error de sintaxis." + "\n"
+        syntax_error += "Error de sintaxis. EOF inesperado." + "\n"
 
 
 parser = yacc.yacc()
@@ -119,34 +115,46 @@ parser = yacc.yacc()
 
 # Inicia la compilación del código
 def compiling(app):
+    global tree
     global semantic_error
     global syntax_error
     semantic_error = ""
     syntax_error = ""
     app.log("Compilando...\n", type_msg="info")
-    app.log("Tokens encontrados:\n", type_msg="info")
     lx.clear()
 
-    # Solicita y realiza el analisis lexico al codigo
+    # Analisis lexico
     lx.lexer.input(app.get_text())
     while True:
         tok = lx.lexer.token()
         if not tok:
-            app.log(lx.get_error() + "\n", type_msg="error")
             break
         else:
+            # app.log("Tokens encontrados:\n", type_msg="info")
             app.log(str(tok) + "\n", type_msg="success")
-    if lx.get_error() != "":  # Detiene la compilacion
+    if lx.get_error() != "":  # Detiene la compilacion: ERROR LEXICO
+        app.log(lx.get_error() + "\n", type_msg="error")
         return
     lx.clear()
+    app.log("No se encontraron errores léxicos!\n", type_msg="success")
 
     # Analisis sintactico
     parser.parse(app.get_text())
-    if syntax_error != "":  # Detiene la compilacion
+    if syntax_error != "":  # Detiene la compilacion: ERROR SINTACTICO
         app.log(syntax_error, type_msg="error")
         return
+    app.log("No se encontraron errores sintácticos!\n", type_msg="success")
 
-    app.log(semantic_error, type_msg="error")
+    # Analisis semantico
+    # print(tree)
+    test(tree)
+    # print(variables)
+    if semantic_error != "":  # Detiene la compilacion: ERROR SEMANTICO
+        app.log(semantic_error, type_msg="error")
+        return
+    app.log("No se encontraron errores semánticos!\n", type_msg="success")
+
+    app.log("\nCompilación finalizada con éxito!!\n\n", type_msg="success")
 
 
 # Inicia la compilación y ejecución del código
@@ -155,21 +163,135 @@ def compiling_running(app):
     app.log("Ejecutando!!\n", type_msg="success")
 
 
-def run(p):
+# ---------------------------------------------
+# ANALISIS SEMANTICO
+# ---------------------------------------------
+
+# Prueba el arbol en busca de errores semanticos
+def test(p):
+    global line_error
     global variables
     global semantic_error
     if type(p) == tuple:
-        if p[0] == "=":  # Asignacion de variables
-            var = run(p[2])
+        if len(p) == 4:
+            line_error = p[3]
+        # Asignacion de variables
+        if p[0] == "=":
+            var = test(p[2])
+            if var == None:
+                return
             if (p[1] in variables) and type(variables[p[1]]) != type(var):
                 semantic_error += (
-                    "La variable " + str(p[1]) + " ya se definio con otro tipo."
+                    "Línea "
+                    + str(p[3])
+                    + ": La variable "
+                    + str(p[1])
+                    + " está definida con otro tipo."
+                    + "\n"
                 )
             else:
                 variables[p[1]] = var
 
-        else:  # Recorre el resto del arbol
+        # Operaciones matematicas
+        elif p[0] == "+":
+            if type(test(p[1])) == int and type(test(p[2])) == int:
+                return test(p[1]) + test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(line_error)
+                + ": Ambos operandos deben ser enteros."
+                + "\n"
+            )
+            return None
+        elif p[0] == "-":
+            if type(test(p[1])) == int and type(test(p[2])) == int:
+                return test(p[1]) - test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(line_error)
+                + ": Ambos operandos deben ser enteros."
+                + "\n"
+            )
+            return None
+        elif p[0] == "*":
+            if type(test(p[1])) == int and type(test(p[2])) == int:
+                return test(p[1]) * test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(line_error)
+                + ": Ambos operandos deben ser enteros."
+                + "\n"
+            )
+            return None
+        elif p[0] == "/":
+            if type(test(p[1])) == int and type(test(p[2])) == int:
+                return int(test(p[1]) / test(p[2]))
+            semantic_error += (
+                "Línea "
+                + str(line_error)
+                + ": Ambos operandos deben ser enteros."
+                + "\n"
+            )
+            return None
+        elif p[0] == "**":
+            if type(test(p[1])) == int and type(test(p[2])) == int:
+                return test(p[1]) ** test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(line_error)
+                + ": Ambos operandos deben ser enteros."
+                + "\n"
+            )
+            return None
+
+        # Operaciones logicas
+        elif p[0] == "|":
+            if type(test(p[1])) == bool and type(test(p[2])) == bool:
+                return test(p[1]) or test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(line_error)
+                + ": Ambos operandos deben ser booleanos."
+                + "\n"
+            )
+            return None
+        elif p[0] == "&":
+            if type(test(p[1])) == bool and type(test(p[2])) == bool:
+                return test(p[1]) and test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(line_error)
+                + ": Ambos operandos deben ser booleanos."
+                + "\n"
+            )
+            return None
+
+        # Recorre el resto del arbol
+        else:
             for i in range(len(p)):
-                run(p[i])
+                test(p[i])
+
+    # Si no es una tupla y es una variable, prueba si existe
+    elif type(p) != bool and type(p) != int:
+        if is_var_defined(p):
+            return variables[p]
+        else:
+            return None
+
+    # Es una constante
     else:
         return p
+
+
+def is_var_defined(var):
+    global variables
+    global line_error
+    global semantic_error
+    try:
+        var = variables[var]
+    except LookupError:
+        semantic_error += (
+            "Línea " + str(line_error) + ": Identificador no definido: " + var + "\n"
+        )
+        return False
+    return True
