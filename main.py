@@ -204,6 +204,7 @@ class App:
         self.codeText = tk.Text(
             self.codeFrame,
             font=("Consolas", 13),
+            tabs=tk.font.Font(font=("Consolas", 13)).measure("    "),
             background="gray15",
             foreground="gray90",
             selectbackground="cyan4",

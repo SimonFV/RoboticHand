@@ -34,10 +34,15 @@ tokens = [
     "COMMA",
     "AND",
     "OR",
-]
-"""
     "L_CURLYBRACKET",
     "R_CURLYBRACKET",
+    "FUNCTION",
+    "ARROW",
+    "TYPE_INT",
+    "TYPE_BOOL",
+    "RETURN",
+]
+"""
     "L_SQUAREBRACKET",
     "R_SQUAREBRACKET",
     "EQUAL",
@@ -57,11 +62,6 @@ tokens = [
     "BREAK",
     "IF",
     "ELSE",
-    "FUNCTION",
-    "ARROW",
-    "TYPE_INT",
-    "TYPE_BOOL",
-    "RETURN",
     "PRINT",
     "MOVE",
     "FINGER_P",
@@ -76,7 +76,16 @@ tokens = [
     "MINUTES","""
 
 # Palabras reservadas
-RESERVED = {"True": "TRUE", "False": "FALSE", "let": "LET", "Opera": "OPERA"}
+RESERVED = {
+    "True": "TRUE",
+    "False": "FALSE",
+    "let": "LET",
+    "Opera": "OPERA",
+    "fn": "FUNCTION",
+    "integer": "TYPE_INT",
+    "boolean": "TYPE_BOOL",
+    "return": "RETURN",
+}
 
 
 # Expresiones regulares
@@ -95,6 +104,13 @@ OPERA = r"Opera"
 t_COMMA = r","
 t_AND = r"&"
 t_OR = r"\|"
+t_L_CURLYBRACKET = r"\{"
+t_R_CURLYBRACKET = r"\}"
+t_FUNCTION = r"fn"
+t_ARROW = r"\->"
+t_TYPE_INT = r"integer"
+t_TYPE_BOOL = r"boolean"
+t_RETURN = r"return"
 
 
 def t_ID(t):
@@ -113,7 +129,12 @@ def t_newline(t):
     t.lexer.lineno += len(t.value)
 
 
-t_ignore = r" \t\n"
+def t_tab(t):
+    r"\t"
+    pass
+
+
+t_ignore = r" "
 
 
 def t_INT(t):
