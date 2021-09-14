@@ -107,7 +107,6 @@ def test(p):
                 if var == None:
                     return
                 test(("=", args[i], var))
-                print(args[i], var)
             test(variables[func_id][2])
             flag_return = False
             for arg in args:

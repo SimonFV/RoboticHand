@@ -1,8 +1,7 @@
 import lexer as lx
 import ply.yacc as yacc
-import sys
 import semantic as sm
-
+import code_generator as cg
 from lexer import tokens
 
 
@@ -234,6 +233,7 @@ def compiling(app):
     app.log("Compilando...\n", type_msg="info")
     lx.clear()
     sm.clear()
+    cg.clear()
 
     # Analisis lexico
     lx.lexer.input(app.get_text())
@@ -249,7 +249,7 @@ def compiling(app):
         app.log(lx.get_error() + "\n", type_msg="error")
         return
     lx.clear()
-    app.log("No se encontraron errores léxicos!\n", type_msg="success")
+    app.log("No se encontraron errores léxicos.\n", type_msg="success")
 
     # Analisis sintactico
     parser.parse(app.get_text(), tracking=True)
@@ -257,27 +257,33 @@ def compiling(app):
         app.log(syntax_error, type_msg="error")
         highlight_errors(app)
         return
-    app.log("No se encontraron errores sintácticos!\n", type_msg="success")
+    app.log("No se encontraron errores sintácticos.\n", type_msg="success")
 
     # Analisis semantico
-    # print(tree)
     sm.check_semantics(tree)
     if sm.get_error() != "":  # Detiene la compilacion: ERROR SEMANTICO
         app.log(sm.get_error(), type_msg="error")
         lines_with_errors += sm.get_lines_error()
         highlight_errors(app)
         return
-    app.log("No se encontraron errores semánticos!\n", type_msg="success")
+    app.log("No se encontraron errores semánticos.\n", type_msg="success")
 
-    app.log("\nCompilación finalizada con éxito!!\n\n", type_msg="success")
+    # Generador de codigo
+    cg.translate(tree)
+    cg.write_code(app)
+
+    app.log("\nCompilación finalizada sin errores.\n\n", type_msg="success")
 
 
 # Inicia la compilación y ejecución del código
 def compiling_running(app):
     compiling(app)
-    app.log("Ejecutando!!\n", type_msg="success")
+    app.log("Ejecutando...\n", type_msg="info")
+    exec(open("exe.py").read())
+    app.log("\nEjecución completada.\n\n", type_msg="success")
 
 
+# Resalta las lineas con error en el IDE
 def highlight_errors(app):
     global lines_with_errors
     for i in lines_with_errors:
