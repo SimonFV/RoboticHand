@@ -23,11 +23,14 @@ def translate(p):
             scope += 1
             args = p[1][1:]
             code += "def " + p[1][0] + "("
-            if len(args) != 0:
-                for i in args:
-                    code += i + ","
-                code = code[:-1]
+            if p[1][0] == "main":
+                code += "robohand_app_param" + ","
+            for i in args:
+                code += i + ","
+            code = code[:-1]
             code += "):\n"
+            if p[1][0] == "main":
+                code += "\tglobal robohand_app\n\trobohand_app = robohand_app_param\n"
             translate(p[2])
             scope -= 1
             code += "\n\n"
@@ -83,6 +86,18 @@ def translate(p):
             translate(p[2])
             code += ")"
 
+        # Print
+        elif p[0] == "print":
+            code += ("\t" * scope) + "println("
+            for i in p[1]:
+                code += "str("
+                translate(i)
+                code += ")+"
+            code = code[:-1]
+            code += ")\n"
+        elif p[0] == "text":
+            code += p[1]
+
         # Recorre el resto del arbol
         else:
             for i in range(len(p)):
@@ -97,13 +112,21 @@ def translate(p):
 def write_code(app):
     global code
 
-    exeFile = open("script.py", "w")
+    # Agrega la funcion para imprimir en el IDE
+    code = "robohand_app = None\n\n" + code
+    code += (
+        "\n\ndef println(msg):\n\tglobal robohand_app\n\t"
+        + r"robohand_app.log(msg + '\n')"
+        + "\n"
+    )
+
+    exeFile = open("exe.py", "w")
     exeFile.write(code)
     exeFile.close()
-
+    """
     exe_script = "import script\n\nscript.main()\n"
 
     exeFile = open("exe.py", "w")
     exeFile.write(exe_script)
     exeFile.close()
-
+    """

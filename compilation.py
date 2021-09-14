@@ -2,6 +2,8 @@ import lexer as lx
 import ply.yacc as yacc
 import semantic as sm
 import code_generator as cg
+import importlib
+import exe
 from lexer import tokens
 
 
@@ -155,6 +157,7 @@ def p_inner_statement(p):
     inner_statement : assignment
                     | return
                     | procedure_call
+                    | print
     """
     p[0] = p[1]
 
@@ -192,6 +195,37 @@ def p_id_arguments(p):
         p[0] = [p[1]] + [p[3]]
     elif p[1] != None:
         p[0] = p[1]
+
+
+def p_print(p):
+    """
+    print : PRINT EXCL L_PAREN print_arguments R_PAREN SEMICOLON
+    """
+    global args
+    args = []
+    split_args(p[4])
+    p[0] = ("print", args, 0, p.lineno(1))
+
+
+def p_print_arguments(p):
+    """
+    print_arguments : expression COMMA print_arguments
+                    | text COMMA print_arguments
+                    | expression
+                    | text
+                    | empty
+    """
+    if len(p) == 4:
+        p[0] = [p[1]] + [p[3]]
+    elif p[1] != None:
+        p[0] = p[1]
+
+
+def p_text(p):
+    """
+    text : STRING
+    """
+    p[0] = ("text", p[1], 0, p.lineno(1))
 
 
 def p_error(p):
@@ -245,6 +279,7 @@ def compiling(app):
         # app.log("Tokens encontrados:\n", type_msg="info")
         # app.log(str(tok) + "\n", type_msg="success")
     if lx.get_error() != "":  # Detiene la compilacion: ERROR LEXICO
+        lines_with_errors += lx.get_lines_error()
         highlight_errors(app)
         app.log(lx.get_error() + "\n", type_msg="error")
         return
@@ -279,7 +314,10 @@ def compiling(app):
 def compiling_running(app):
     compiling(app)
     app.log("Ejecutando...\n", type_msg="info")
-    exec(open("exe.py").read())
+
+    importlib.reload(exe)
+
+    exe.main(app)
     app.log("\nEjecución completada.\n\n", type_msg="success")
 
 

@@ -1,17 +1,25 @@
 import ply.lex as lex
 
 error_msg = ""
+lines_of_error = []
 
 
 def clear():
     global error_msg
+    global lines_of_error
     error_msg = ""
     lexer.lineno = 1
+    lines_of_error = []
 
 
 def get_error():
     global error_msg
     return error_msg
+
+
+def get_lines_error():
+    global lines_of_error
+    return lines_of_error
 
 
 # Lista de Tokens
@@ -41,20 +49,20 @@ tokens = [
     "TYPE_INT",
     "TYPE_BOOL",
     "RETURN",
+    "PRINT",
+    "EXCL",
+    "STRING",
 ]
 """
-    "L_SQUAREBRACKET",
-    "R_SQUAREBRACKET",
     "EQUAL",
     "NOT_EQUAL",
     "GREATER_EQUAL_THAN",
     "LESS_EQUAL_THAN",
     "GREATER_THAN",
     "LESS_THAN",
-    "DOT",
     "FOR",
-    "RANGE",
     "IN",
+    "DOT_DOT",
     "BEFORE",
     "UNTIL",
     "WHILE",
@@ -62,7 +70,6 @@ tokens = [
     "BREAK",
     "IF",
     "ELSE",
-    "PRINT",
     "MOVE",
     "FINGER_P",
     "FINGER_I",
@@ -70,10 +77,14 @@ tokens = [
     "FINGER_A",
     "FINGER_Q",
     "ALL_FINGERS",
+    "L_SQUAREBRACKET",
+    "R_SQUAREBRACKET",
     "DELAY",
     "SECONDS",
     "MILISECONDS",
-    "MINUTES","""
+    "MINUTES"
+"""
+
 
 # Palabras reservadas
 RESERVED = {
@@ -85,6 +96,7 @@ RESERVED = {
     "integer": "TYPE_INT",
     "boolean": "TYPE_BOOL",
     "return": "RETURN",
+    "Println": "PRINT",
 }
 
 
@@ -111,6 +123,9 @@ t_ARROW = r"\->"
 t_TYPE_INT = r"integer"
 t_TYPE_BOOL = r"boolean"
 t_RETURN = r"return"
+t_PRINT = r"Println"
+t_STRING = r"\"[^\"]*\""
+t_EXCL = r"!"
 
 
 def t_ID(t):
@@ -162,9 +177,11 @@ def t_FALSE(t):
 
 def t_error(t):
     global error_msg
+    global lines_of_error
     error_msg += (
         "Caracter ilegal " + str(t.value[0]) + " en la línea " + str(t.lineno) + ".\n"
     )
+    lines_of_error += [t.lineno]
     t.lexer.skip(1)
 
 

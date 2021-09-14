@@ -133,7 +133,7 @@ def test(p):
                 return None
             return value_return
 
-        # Return de funciones
+        # Retorno de funciones
         elif p[0] == "return":
             if p[1] == None:
                 value_return = None
@@ -244,6 +244,13 @@ def test(p):
             )
             lines_of_error += [line_error]
             return None
+
+        # Print
+        elif p[0] == "print":
+            for i in p[1]:
+                test(i)
+        elif p[0] == "text":
+            return p[1]
 
         # Recorre el resto del arbol
         else:
