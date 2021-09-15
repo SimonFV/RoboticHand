@@ -71,11 +71,11 @@ def test(p):
                 if len(args) != 0:
                     semantic_error += (
                         "Línea "
-                        + str(line_error)
+                        + str(p[3])
                         + ": La función main no debe contener argumentos."
                         + "\n"
                     )
-                    lines_of_error += [line_error]
+                    lines_of_error += [p[3]]
                     return
                 flag_main_found = True
                 test(p[2])
@@ -84,13 +84,13 @@ def test(p):
             elif func_id in variables:
                 semantic_error += (
                     "Línea "
-                    + str(line_error)
+                    + str(p[3])
                     + ": La función "
                     + str(p[1])
                     + " ya está definida."
                     + "\n"
                 )
-                lines_of_error += [line_error]
+                lines_of_error += [p[3]]
                 return
             variables[func_id] = [p[0], args, p[2]]
 
@@ -125,11 +125,9 @@ def test(p):
                 return None
             if variables[func_id][0] == "None" and value_return != None:
                 semantic_error += (
-                    "Línea "
-                    + str(line_error)
-                    + ": La función no puede retornar un valor.\n"
+                    "Línea " + str(p[3]) + ": La función no puede retornar un valor.\n"
                 )
-                lines_of_error += [line_error]
+                lines_of_error += [p[3]]
                 return None
             return value_return
 
@@ -154,71 +152,70 @@ def test(p):
             if (p[1] in variables) and type(variables[p[1]]) != type(var):
                 semantic_error += (
                     "Línea "
-                    + str(line_error)
+                    + str(p[3])
                     + ": La variable "
                     + str(p[1])
                     + " está definida con otro tipo."
                     + "\n"
                 )
-                lines_of_error += [line_error]
+                lines_of_error += [p[3]]
             else:
                 variables[p[1]] = var
+
+        # Iteraciones
+        elif p[0] == "for=" or p[0] == "for":
+            if type(test(p[1][1])) != int or type(test(p[1][2])) != int:
+                semantic_error += (
+                    "Línea "
+                    + str(p[3])
+                    + ": Los dos valores del rango deben ser enteros."
+                    + "\n"
+                )
+                lines_of_error += [p[3]]
+                return
+            test(("=", p[1][0], p[1][1], p[3]))
+            test(p[2])
 
         # Operaciones matematicas
         elif p[0] == "+":
             if type(test(p[1])) == int and type(test(p[2])) == int:
                 return test(p[1]) + test(p[2])
             semantic_error += (
-                "Línea "
-                + str(line_error)
-                + ": Ambos operandos deben ser enteros."
-                + "\n"
+                "Línea " + str(p[3]) + ": Ambos operandos deben ser enteros." + "\n"
             )
-            lines_of_error += [line_error]
+            lines_of_error += [p[3]]
             return None
         elif p[0] == "-":
             if type(test(p[1])) == int and type(test(p[2])) == int:
                 return test(p[1]) - test(p[2])
             semantic_error += (
-                "Línea "
-                + str(line_error)
-                + ": Ambos operandos deben ser enteros."
-                + "\n"
+                "Línea " + str(p[3]) + ": Ambos operandos deben ser enteros." + "\n"
             )
-            lines_of_error += [line_error]
+            lines_of_error += [p[3]]
             return None
         elif p[0] == "*":
             if type(test(p[1])) == int and type(test(p[2])) == int:
                 return test(p[1]) * test(p[2])
             semantic_error += (
-                "Línea "
-                + str(line_error)
-                + ": Ambos operandos deben ser enteros."
-                + "\n"
+                "Línea " + str(p[3]) + ": Ambos operandos deben ser enteros." + "\n"
             )
-            lines_of_error += [line_error]
+            lines_of_error += [p[3]]
             return None
         elif p[0] == "/":
             if type(test(p[1])) == int and type(test(p[2])) == int:
                 return int(test(p[1]) / test(p[2]))
             semantic_error += (
-                "Línea "
-                + str(line_error)
-                + ": Ambos operandos deben ser enteros."
-                + "\n"
+                "Línea " + str(p[3]) + ": Ambos operandos deben ser enteros." + "\n"
             )
-            lines_of_error += [line_error]
+            lines_of_error += [p[3]]
             return None
         elif p[0] == "**":
             if type(test(p[1])) == int and type(test(p[2])) == int:
                 return int(test(p[1]) ** test(p[2]))
             semantic_error += (
-                "Línea "
-                + str(line_error)
-                + ": Ambos operandos deben ser enteros."
-                + "\n"
+                "Línea " + str(p[3]) + ": Ambos operandos deben ser enteros." + "\n"
             )
-            lines_of_error += [line_error]
+            lines_of_error += [p[3]]
             return None
 
         # Operaciones logicas
@@ -226,23 +223,85 @@ def test(p):
             if type(test(p[1])) == bool and type(test(p[2])) == bool:
                 return test(p[1]) or test(p[2])
             semantic_error += (
-                "Línea "
-                + str(line_error)
-                + ": Ambos operandos deben ser booleanos."
-                + "\n"
+                "Línea " + str(p[3]) + ": Ambos operandos deben ser booleanos." + "\n"
             )
-            lines_of_error += [line_error]
+            lines_of_error += [p[3]]
             return None
         elif p[0] == "&":
             if type(test(p[1])) == bool and type(test(p[2])) == bool:
                 return test(p[1]) and test(p[2])
             semantic_error += (
+                "Línea " + str(p[3]) + ": Ambos operandos deben ser booleanos." + "\n"
+            )
+            lines_of_error += [p[3]]
+            return None
+
+        # Comparaciones
+        elif p[0] == "<>":
+            if type(test(p[1])) == type(test(p[2])):
+                return test(p[1]) != test(p[2])
+            semantic_error += (
                 "Línea "
-                + str(line_error)
-                + ": Ambos operandos deben ser booleanos."
+                + str(p[3])
+                + ": Ambos operandos deben ser del mismo tipo en la comparación."
                 + "\n"
             )
-            lines_of_error += [line_error]
+            lines_of_error += [p[3]]
+            return None
+        elif p[0] == "==":
+            if type(test(p[1])) == type(test(p[2])):
+                return test(p[1]) == test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(p[3])
+                + ": Ambos operandos deben ser del mismo tipo en la comparación."
+                + "\n"
+            )
+            lines_of_error += [p[3]]
+            return None
+        elif p[0] == "<":
+            if type(test(p[1])) == type(test(p[2])):
+                return test(p[1]) < test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(p[3])
+                + ": Ambos operandos deben ser del mismo tipo en la comparación."
+                + "\n"
+            )
+            lines_of_error += [p[3]]
+            return None
+        elif p[0] == ">":
+            if type(test(p[1])) == type(test(p[2])):
+                return test(p[1]) > test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(p[3])
+                + ": Ambos operandos deben ser del mismo tipo en la comparación."
+                + "\n"
+            )
+            lines_of_error += [p[3]]
+            return None
+        elif p[0] == "<=":
+            if type(test(p[1])) == type(test(p[2])):
+                return test(p[1]) <= test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(p[3])
+                + ": Ambos operandos deben ser del mismo tipo en la comparación."
+                + "\n"
+            )
+            lines_of_error += [p[3]]
+            return None
+        elif p[0] == ">=":
+            if type(test(p[1])) == type(test(p[2])):
+                return test(p[1]) >= test(p[2])
+            semantic_error += (
+                "Línea "
+                + str(p[3])
+                + ": Ambos operandos deben ser del mismo tipo en la comparación."
+                + "\n"
+            )
+            lines_of_error += [p[3]]
             return None
 
         # Print

@@ -16,6 +16,7 @@ syntax_error = ""  # Pila de errores
 tree = ()  # Arbol de parseo
 args = []  # Argumentos temporales de las funciones
 lines_with_errors = []  # Lista de lineas con los errores
+flag_errors_found = False
 
 
 # Reglas del parser
@@ -101,6 +102,18 @@ def p_expression(p):
             p[0] = p[1]
 
 
+def p_expression_comparison(p):
+    """
+    expression : expression NOT_EQUAL expression 
+               | expression GREATER_EQUAL_THAN expression
+               | expression LESS_EQUAL_THAN expression
+               | expression GREATER_THAN expression
+               | expression LESS_THAN expression
+               | expression EQUAL expression
+    """
+    p[0] = (p[2], p[1], p[3], p.lineno(1))
+
+
 def p_expression_uminus(p):
     "expression : MINUS INT %prec UMINUS"
     p[0] = -p[2]
@@ -158,6 +171,7 @@ def p_inner_statement(p):
                     | return
                     | procedure_call
                     | print
+                    | for
     """
     p[0] = p[1]
 
@@ -228,6 +242,17 @@ def p_text(p):
     p[0] = ("text", p[1], 0, p.lineno(1))
 
 
+def p_for(p):
+    """
+    for : FOR ID IN expression DOT_DOT ASSIGN expression L_CURLYBRACKET inner_statements R_CURLYBRACKET
+        | FOR ID IN expression DOT_DOT expression L_CURLYBRACKET inner_statements R_CURLYBRACKET
+    """
+    if len(p) == 11:
+        p[0] = ("for=", [p[2], p[4], p[7]], p[9], p.lineno(1))
+    else:
+        p[0] = ("for", [p[2], p[4], p[6]], p[8], p.lineno(1))
+
+
 def p_error(p):
     global syntax_error
     if p:
@@ -262,6 +287,8 @@ def compiling(app):
     global tree
     global syntax_error
     global lines_with_errors
+    global flag_errors_found
+    flag_errors_found = False
     syntax_error = ""
     lines_with_errors = []
     app.log("Compilando...\n", type_msg="info")
@@ -279,6 +306,7 @@ def compiling(app):
         # app.log("Tokens encontrados:\n", type_msg="info")
         # app.log(str(tok) + "\n", type_msg="success")
     if lx.get_error() != "":  # Detiene la compilacion: ERROR LEXICO
+        flag_errors_found = True
         lines_with_errors += lx.get_lines_error()
         highlight_errors(app)
         app.log(lx.get_error() + "\n", type_msg="error")
@@ -289,6 +317,7 @@ def compiling(app):
     # Analisis sintactico
     parser.parse(app.get_text(), tracking=True)
     if syntax_error != "":  # Detiene la compilacion: ERROR SINTACTICO
+        flag_errors_found = True
         app.log(syntax_error, type_msg="error")
         highlight_errors(app)
         return
@@ -297,6 +326,7 @@ def compiling(app):
     # Analisis semantico
     sm.check_semantics(tree)
     if sm.get_error() != "":  # Detiene la compilacion: ERROR SEMANTICO
+        flag_errors_found = True
         app.log(sm.get_error(), type_msg="error")
         lines_with_errors += sm.get_lines_error()
         highlight_errors(app)
@@ -312,7 +342,12 @@ def compiling(app):
 
 # Inicia la compilación y ejecución del código
 def compiling_running(app):
+    global flag_errors_found
     compiling(app)
+
+    if flag_errors_found:
+        return
+
     app.log("Ejecutando...\n", type_msg="info")
 
     importlib.reload(exe)

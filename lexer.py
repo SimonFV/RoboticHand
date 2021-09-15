@@ -52,8 +52,6 @@ tokens = [
     "PRINT",
     "EXCL",
     "STRING",
-]
-"""
     "EQUAL",
     "NOT_EQUAL",
     "GREATER_EQUAL_THAN",
@@ -63,8 +61,8 @@ tokens = [
     "FOR",
     "IN",
     "DOT_DOT",
-    "BEFORE",
-    "UNTIL",
+]
+"""
     "WHILE",
     "LOOP",
     "BREAK",
@@ -97,6 +95,8 @@ RESERVED = {
     "boolean": "TYPE_BOOL",
     "return": "RETURN",
     "Println": "PRINT",
+    "for": "FOR",
+    "in": "IN",
 }
 
 
@@ -104,6 +104,12 @@ RESERVED = {
 
 t_SEMICOLON = r";"
 t_LET = r"let"
+t_NOT_EQUAL = r"<>"
+t_GREATER_EQUAL_THAN = r">="
+t_LESS_EQUAL_THAN = r"<="
+t_GREATER_THAN = r">"
+t_LESS_THAN = r"<"
+t_EQUAL = r"=="
 t_ASSIGN = r"="
 t_L_PAREN = r"\("
 t_R_PAREN = r"\)"
@@ -126,6 +132,9 @@ t_RETURN = r"return"
 t_PRINT = r"Println"
 t_STRING = r"\"[^\"]*\""
 t_EXCL = r"!"
+t_FOR = r"for"
+t_IN = r"in"
+t_DOT_DOT = r"\.\."
 
 
 def t_ID(t):

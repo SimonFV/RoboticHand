@@ -58,6 +58,20 @@ def translate(p):
             translate(p[2])
             code += "\n"
 
+        # Iteradores
+        elif p[0] == "for=" or p[0] == "for":
+            code += ("\t" * scope) + "for " + p[1][0] + " in range("
+            translate(p[1][1])
+            code += ", "
+            if p[0] == "for=":
+                translate(p[1][2] + 1)
+            else:
+                translate(p[1][2])
+            code += "):\n"
+            scope += 1
+            translate(p[2])
+            scope -= 1
+
         # Operaciones matematicas
         elif p[0] == "+" or p[0] == "-" or p[0] == "*":
             code += "("
@@ -83,6 +97,21 @@ def translate(p):
             code += "("
             translate(p[1])
             code += " and "
+            translate(p[2])
+            code += ")"
+
+        # Comparaciones
+        elif (
+            p[0] == "=="
+            or p[0] == "<>"
+            or p[0] == "<="
+            or p[0] == ">="
+            or p[0] == "<"
+            or p[0] == ">"
+        ):
+            code += "("
+            translate(p[1])
+            code += " " + p[0] + " "
             translate(p[2])
             code += ")"
 
