@@ -8,21 +8,34 @@ semantic_error = ""
 line_error = 1
 flag_main_found = False
 flag_return = False
+flag_insde_while = False
 value_return = None
+infinite_loops = 0
 lines_of_error = []
+flag_break_found = False
 
 
 def clear():
-    global semantic_error
     global variables
+    global semantic_error
     global line_error
-    global lines_of_error
     global flag_main_found
-    semantic_error = ""
+    global flag_return
+    global flag_insde_while
+    global value_return
+    global lines_of_error
+    global infinite_loops
+    global flag_break_found
+    infinite_loops = 0
     variables = {}
+    semantic_error = ""
     line_error = 1
-    lines_of_error = []
     flag_main_found = False
+    flag_return = False
+    flag_insde_while = False
+    value_return = None
+    lines_of_error = []
+    flag_break_found = False
 
 
 def get_error():
@@ -54,6 +67,9 @@ def test(p):
     global value_return
     global lines_of_error
     global flag_main_found
+    global flag_insde_while
+    global infinite_loops
+    global flag_break_found
 
     if flag_return:
         return
@@ -175,6 +191,55 @@ def test(p):
                 return
             test(("=", p[1][0], p[1][1], p[3]))
             test(p[2])
+        elif p[0] == "while" or p[0] == "loop":
+            if p[0] == "while":
+                expr = test(p[1])
+                if type(expr) != bool:
+                    semantic_error += (
+                        "Línea "
+                        + str(p[3])
+                        + ": La condición del iterador debe ser boolean."
+                        + "\n"
+                    )
+                    lines_of_error += [p[3]]
+                    return
+                if p[1] == True:
+                    infinite_loops += 1
+                elif type(p[1]) == tuple:
+                    if type(p[1][1]) != tuple and type(p[1][2]) != tuple:
+                        if type(p[1][1]) != str and type(p[1][2]) != str:
+                            infinite_loops += 1
+            else:
+                infinite_loops += 1
+            flag_break_found = False
+            local_infinite_loop = infinite_loops
+            local_inside_while = flag_insde_while
+            flag_insde_while = True
+            test(p[2])
+            if not local_inside_while:
+                flag_insde_while = False
+            flag_break_found = False
+            if local_infinite_loop != 0 and local_infinite_loop == infinite_loops:
+                semantic_error += (
+                    "Línea " + str(p[3]) + ": Loop infinito sin break." + "\n"
+                )
+                lines_of_error += [p[3]]
+                if local_inside_while:
+                    infinite_loops += 1
+        elif p[0] == "break":
+            if flag_break_found:
+                return
+            if not flag_insde_while:
+                semantic_error += (
+                    "Línea "
+                    + str(p[3])
+                    + ": El break debe ir dentro de un while o de un loop."
+                    + "\n"
+                )
+                lines_of_error += [p[3]]
+                return
+            infinite_loops -= 1
+            flag_break_found = True
 
         # Operaciones matematicas
         elif p[0] == "+":
@@ -346,3 +411,4 @@ def is_var_defined(var):
         lines_of_error += [line_error]
         return False
     return True
+

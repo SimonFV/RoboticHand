@@ -172,6 +172,8 @@ def p_inner_statement(p):
                     | procedure_call
                     | print
                     | for
+                    | while
+                    | break
     """
     p[0] = p[1]
 
@@ -251,6 +253,24 @@ def p_for(p):
         p[0] = ("for=", [p[2], p[4], p[7]], p[9], p.lineno(1))
     else:
         p[0] = ("for", [p[2], p[4], p[6]], p[8], p.lineno(1))
+
+
+def p_while(p):
+    """
+    while : WHILE expression L_CURLYBRACKET inner_statements R_CURLYBRACKET
+          | LOOP L_CURLYBRACKET inner_statements R_CURLYBRACKET
+    """
+    if len(p) == 6:
+        p[0] = (p[1], p[2], p[4], p.lineno(1))
+    else:
+        p[0] = (p[1], 0, p[3], p.lineno(1))
+
+
+def p_break(p):
+    """
+    break : BREAK SEMICOLON
+    """
+    p[0] = (p[1], 0, 0, p.lineno(1))
 
 
 def p_error(p):

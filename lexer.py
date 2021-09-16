@@ -61,11 +61,11 @@ tokens = [
     "FOR",
     "IN",
     "DOT_DOT",
-]
-"""
     "WHILE",
     "LOOP",
     "BREAK",
+]
+"""
     "IF",
     "ELSE",
     "MOVE",
@@ -97,6 +97,9 @@ RESERVED = {
     "Println": "PRINT",
     "for": "FOR",
     "in": "IN",
+    "while": "WHILE",
+    "loop": "LOOP",
+    "break": "BREAK",
 }
 
 
@@ -135,6 +138,9 @@ t_EXCL = r"!"
 t_FOR = r"for"
 t_IN = r"in"
 t_DOT_DOT = r"\.\."
+t_WHILE = r"while"
+t_LOOP = r"loop"
+t_BREAK = r"break"
 
 
 def t_ID(t):

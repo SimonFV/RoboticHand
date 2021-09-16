@@ -71,6 +71,22 @@ def translate(p):
             scope += 1
             translate(p[2])
             scope -= 1
+            code += "\n"
+        elif p[0] == "while" or p[0] == "loop":
+            if p[0] == "while":
+                code += ("\t" * scope) + "while ("
+                translate(p[1])
+                code += "):\n"
+            else:
+                code += ("\t" * scope) + "while True:\n"
+            scope += 1
+            translate(p[2])
+            scope -= 1
+            code += "\n"
+
+        # Break
+        elif p[0] == "break":
+            code += ("\t" * scope) + "break\n"
 
         # Operaciones matematicas
         elif p[0] == "+" or p[0] == "-" or p[0] == "*":
@@ -144,7 +160,7 @@ def write_code(app):
     # Agrega la funcion para imprimir en el IDE
     code = "robohand_app = None\n\n" + code
     code += (
-        "\n\ndef println(msg):\n\tglobal robohand_app\n\t"
+        "\n\ndef robohand_println(msg):\n\tglobal robohand_app\n\t"
         + r"robohand_app.log(msg + '\n')"
         + "\n"
     )
