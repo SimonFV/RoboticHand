@@ -256,6 +256,66 @@ def test(p):
                 return
             test(p[2])
 
+        # Mover los dedos
+        elif p[0] == "Move":
+            for i in p[1]:
+                if (
+                    (type(i) != tuple)
+                    or (i[0] != "text")
+                    or (
+                        (i[1] != '"P"')
+                        and (i[1] != '"I"')
+                        and (i[1] != '"M"')
+                        and (i[1] != '"A"')
+                        and (i[1] != '"Q"')
+                        and (i[1] != '"T"')
+                    )
+                ):
+                    semantic_error += (
+                        "Línea "
+                        + str(p[3])
+                        + ': Primer argumento incorrecto. Valores aceptados para dedos: "P", "I", "M", "A", "Q", "T"'
+                        + '\nTambién se pueden ingresar como lista: ["P", "I"]\n'
+                    )
+                    lines_of_error += [p[3]]
+                    return
+            if type(test(p[2])) != bool:
+                semantic_error += (
+                    "Línea "
+                    + str(p[3])
+                    + ": Segundo argumento incorrecto. Solo se aceptan tipo boolean.\n"
+                )
+                lines_of_error += [p[3]]
+                return
+
+        # Delay
+        elif p[0] == "Delay":
+            expr = test(p[1])
+            if (type(expr) != int) or (expr <= 0):
+                semantic_error += (
+                    "Línea "
+                    + str(p[3])
+                    + ": Primer argumento incorrecto. Se debe utilizar un entero positivo.\n"
+                )
+                lines_of_error += [p[3]]
+                return
+            if (
+                (type(p[2]) != tuple)
+                or (p[2][0] != "text")
+                or (
+                    (p[2][1] != '"Seg"')
+                    and (p[2][1] != '"Mil"')
+                    and (p[2][1] != '"Min"')
+                )
+            ):
+                semantic_error += (
+                    "Línea "
+                    + str(p[3])
+                    + ': Segundo argumento incorrecto. Se aceptan los parámetros "Seg", "Mil", "Min"\n'
+                )
+                lines_of_error += [p[3]]
+                return
+
         # Operaciones matematicas
         elif p[0] == "+":
             if type(test(p[1])) == int and type(test(p[2])) == int:

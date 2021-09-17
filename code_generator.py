@@ -29,6 +29,8 @@ def translate(p):
                     code += i + ","
                 code = code[:-1]
             code += "):\n"
+            if temp == "main":
+                code += "\trobohand_app.update_idletasks()\n\trobohand_app.update()\n\n"
             translate(p[2])
             scope -= 1
             code += "\n\n"
@@ -107,6 +109,25 @@ def translate(p):
                 translate(p[2])
                 scope -= 1
                 code += "\n"
+
+        # Move
+        elif p[0] == "Move":
+            code += ("\t" * scope) + "Move(["
+            for i in p[1]:
+                translate(i)
+                code += ","
+            code = code[:-1]
+            code += "], "
+            translate(p[2])
+            code += ")\n"
+
+        # Delay
+        elif p[0] == "Delay":
+            code += ("\t" * scope) + "Delay("
+            translate(p[1])
+            code += ", "
+            translate(p[2])
+            code += ")\n"
 
         # Operaciones matematicas
         elif p[0] == "+" or p[0] == "-" or p[0] == "*":
@@ -212,6 +233,8 @@ robohand_logText.config(state="disabled")
 
 
 def robohand_println(msg):
+    robohand_app.update_idletasks()
+    robohand_app.update()
     robohand_logText.config(state="normal")
     robohand_logText.insert("end", msg + \"\\n\")
     robohand_logText.see("end")

@@ -166,6 +166,8 @@ def p_inner_statement(p):
                     | while
                     | break
                     | if_else
+                    | move
+                    | delay
     """
     p[0] = p[1]
 
@@ -221,11 +223,10 @@ def p_print_arguments(p):
                     | text COMMA print_arguments
                     | expression
                     | text
-                    | empty
     """
     if len(p) == 4:
         p[0] = [p[1]] + [p[3]]
-    elif p[1] != None:
+    else:
         p[0] = p[1]
 
 
@@ -278,6 +279,38 @@ def p_if_else(p):
         p[0] = ("if-else", p[2], (p[4], p[7]), p.lineno(1))
     else:
         p[0] = ("if", p[2], p[4], p.lineno(1))
+
+
+def p_move(p):
+    """
+    move : MOVE L_PAREN L_SQUAREBRACKET finger_arguments R_SQUAREBRACKET COMMA expression R_PAREN SEMICOLON
+         | MOVE L_PAREN text COMMA expression R_PAREN SEMICOLON
+    """
+    global args
+    args = []
+    if len(p) == 10:
+        split_args(p[4])
+        p[0] = ("Move", args, p[7], p.lineno(1))
+    else:
+        p[0] = ("Move", [p[3]], p[5], p.lineno(1))
+
+
+def p_finger_arguments(p):
+    """
+    finger_arguments : text COMMA finger_arguments
+                     | text
+    """
+    if len(p) == 4:
+        p[0] = [p[1]] + [p[3]]
+    elif p[1] != None:
+        p[0] = p[1]
+
+
+def p_delay(p):
+    """
+    delay : DELAY L_PAREN expression COMMA text R_PAREN SEMICOLON
+    """
+    p[0] = ("Delay", p[3], p[5], p.lineno(1))
 
 
 def p_error(p):

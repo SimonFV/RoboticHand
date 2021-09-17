@@ -66,23 +66,11 @@ tokens = [
     "BREAK",
     "IF",
     "ELSE",
-]
-"""
-    
     "MOVE",
-    "FINGER_P",
-    "FINGER_I",
-    "FINGER_M",
-    "FINGER_A",
-    "FINGER_Q",
-    "ALL_FINGERS",
     "L_SQUAREBRACKET",
     "R_SQUAREBRACKET",
     "DELAY",
-    "SECONDS",
-    "MILISECONDS",
-    "MINUTES"
-"""
+]
 
 
 # Palabras reservadas
@@ -95,7 +83,7 @@ RESERVED = {
     "integer": "TYPE_INT",
     "boolean": "TYPE_BOOL",
     "return": "RETURN",
-    "Println": "PRINT",
+    "println": "PRINT",
     "for": "FOR",
     "in": "IN",
     "while": "WHILE",
@@ -103,6 +91,8 @@ RESERVED = {
     "break": "BREAK",
     "if": "IF",
     "else": "ELSE",
+    "Move": "MOVE",
+    "Delay": "DELAY",
 }
 
 
@@ -135,7 +125,7 @@ t_ARROW = r"\->"
 t_TYPE_INT = r"integer"
 t_TYPE_BOOL = r"boolean"
 t_RETURN = r"return"
-t_PRINT = r"Println"
+t_PRINT = r"println"
 t_STRING = r"\"[^\"]*\""
 t_EXCL = r"!"
 t_FOR = r"for"
@@ -146,6 +136,10 @@ t_LOOP = r"loop"
 t_BREAK = r"break"
 t_IF = r"if"
 t_ELSE = r"else"
+t_MOVE = r"Move"
+t_L_SQUAREBRACKET = r"\["
+t_R_SQUAREBRACKET = r"\]"
+t_DELAY = r"Delay"
 
 
 def t_ID(t):
