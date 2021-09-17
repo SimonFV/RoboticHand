@@ -112,7 +112,7 @@ def translate(p):
 
         # Move
         elif p[0] == "Move":
-            code += ("\t" * scope) + "Move(["
+            code += ("\t" * scope) + "robohand_Move(["
             for i in p[1]:
                 translate(i)
                 code += ","
@@ -123,7 +123,7 @@ def translate(p):
 
         # Delay
         elif p[0] == "Delay":
-            code += ("\t" * scope) + "Delay("
+            code += ("\t" * scope) + "robohand_Delay("
             translate(p[1])
             code += ", "
             translate(p[2])
@@ -233,13 +233,22 @@ robohand_logText.config(state="disabled")
 
 
 def robohand_println(msg):
-    robohand_app.update_idletasks()
-    robohand_app.update()
     robohand_logText.config(state="normal")
     robohand_logText.insert("end", msg + \"\\n\")
     robohand_logText.see("end")
     robohand_logText.config(state="disabled")
+    robohand_app.update_idletasks()
+    robohand_app.update()
 
+def robohand_Delay(robohand_num, robohand_scale):
+    robohand_println(\"Delay: \" + str(robohand_num) + \" \" + robohand_scale)
+    robohand_app.update_idletasks()
+    robohand_app.update()
+
+def robohand_Move(robohand_fingers, robohand_side):
+    robohand_println(\"Move: \" + str(robohand_fingers) + \" \" + str(robohand_side))
+    robohand_app.update_idletasks()
+    robohand_app.update()
 
 
 """
