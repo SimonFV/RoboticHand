@@ -7,6 +7,7 @@ import tkinter.ttk
 import tkinter as tk
 import ntpath
 import compilation as comp
+import os
 
 # Canvas para los numeros de las lineas
 class customLineCanvas(tk.Canvas):
@@ -309,7 +310,7 @@ class App:
             savedFile.write(self.codeText.get("1.0", "end-1c"))
             savedFile.close()
 
-        self.log("Archivo guardado!!\n", type_msg="info")
+        self.log("Archivo guardado.\n", type_msg="info")
 
     # Activa la zona de edición de texto para editar un archivo
     def activate_text(self):
@@ -407,7 +408,16 @@ class App:
         if self.get_text() == "":
             self.log("Sin código...\n", type_msg="warning")
             return
-        comp.compiling_running(self)
+        if comp.compiling_running(self):
+            try:
+                root.update()
+                path = os.path.dirname(os.path.abspath(__file__))
+                os.system(path + "/dist/program.exe")
+                self.log("\nEjecución completada.\n\n", type_msg="success")
+            except:
+                self.log(
+                    "\nError inesperado durante la ejecución.\n\n", type_msg="error"
+                )
 
 
 # Inicializa la aplicación

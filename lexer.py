@@ -64,10 +64,11 @@ tokens = [
     "WHILE",
     "LOOP",
     "BREAK",
-]
-"""
     "IF",
     "ELSE",
+]
+"""
+    
     "MOVE",
     "FINGER_P",
     "FINGER_I",
@@ -100,6 +101,8 @@ RESERVED = {
     "while": "WHILE",
     "loop": "LOOP",
     "break": "BREAK",
+    "if": "IF",
+    "else": "ELSE",
 }
 
 
@@ -141,6 +144,8 @@ t_DOT_DOT = r"\.\."
 t_WHILE = r"while"
 t_LOOP = r"loop"
 t_BREAK = r"break"
+t_IF = r"if"
+t_ELSE = r"else"
 
 
 def t_ID(t):
@@ -194,7 +199,13 @@ def t_error(t):
     global error_msg
     global lines_of_error
     error_msg += (
-        "Caracter ilegal " + str(t.value[0]) + " en la línea " + str(t.lineno) + ".\n"
+        "Caracter ilegal "
+        + str(t.value[0])
+        + " en la línea "
+        + str(t.lineno)
+        + ".\n"
+        + " Los identificadores deben contener entre 3 y 15 caracteres, no deben empezar con números,\n"
+        + " y solo se permiten los siguientes caracteres especiales: _ # ?\n"
     )
     lines_of_error += [t.lineno]
     t.lexer.skip(1)

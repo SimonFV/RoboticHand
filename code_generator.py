@@ -22,22 +22,21 @@ def translate(p):
         if p[0] == "integer" or p[0] == "boolean" or p[0] == "None":
             scope += 1
             args = p[1][1:]
-            code += "def " + p[1][0] + "("
-            if p[1][0] == "main":
-                code += "robohand_app_param" + ","
-            for i in args:
-                code += i + ","
-            code = code[:-1]
+            temp = p[1][0].replace("#", "_num_s_").replace("?", "_qust_s_")
+            code += "def " + temp + "("
+            if len(args) != 0:
+                for i in args:
+                    code += i + ","
+                code = code[:-1]
             code += "):\n"
-            if p[1][0] == "main":
-                code += "\tglobal robohand_app\n\trobohand_app = robohand_app_param\n"
             translate(p[2])
             scope -= 1
             code += "\n\n"
 
         # Llamada de funciones
         elif p[0] == "call":
-            code += ("\t" * scope) + p[1] + "("
+            temp = p[1].replace("#", "_num_s_").replace("?", "_qust_s_")
+            code += ("\t" * scope) + temp + "("
             if len(p[2]) != 0:
                 for i in p[2]:
                     translate(i)
@@ -54,7 +53,8 @@ def translate(p):
 
         # Asignacion de variables
         elif p[0] == "=":
-            code += ("\t" * scope) + p[1] + " = "
+            temp = p[1].replace("#", "_num_s_").replace("?", "_qust_s_")
+            code += ("\t" * scope) + temp + " = "
             translate(p[2])
             code += "\n"
 
@@ -87,6 +87,26 @@ def translate(p):
         # Break
         elif p[0] == "break":
             code += ("\t" * scope) + "break\n"
+
+        # If - else - elif
+        elif p[0] == "if" or p[0] == "if-else":
+            code += ("\t" * scope) + "if "
+            translate(p[1])
+            code += ":\n"
+            scope += 1
+            if p[0] == "if-else":
+                translate(p[2][0])
+                scope -= 1
+                code += "\n"
+                code += ("\t" * scope) + "else:\n"
+                scope += 1
+                translate(p[2][1])
+                scope -= 1
+                code += "\n"
+            else:
+                translate(p[2])
+                scope -= 1
+                code += "\n"
 
         # Operaciones matematicas
         elif p[0] == "+" or p[0] == "-" or p[0] == "*":
@@ -133,7 +153,7 @@ def translate(p):
 
         # Print
         elif p[0] == "print":
-            code += ("\t" * scope) + "println("
+            code += ("\t" * scope) + "robohand_println("
             for i in p[1]:
                 code += "str("
                 translate(i)
@@ -150,7 +170,10 @@ def translate(p):
 
     # Si no es una tupla y es una variable o una constante
     else:
-        code += str(p)
+        temp = str(p)
+        temp = temp.replace("#", "_num_s_")
+        temp = temp.replace("?", "_qust_s_")
+        code += temp
 
 
 # Crea los archivos de python necesarios para ejecutar el codigo
@@ -158,20 +181,47 @@ def write_code(app):
     global code
 
     # Agrega la funcion para imprimir en el IDE
-    code = "robohand_app = None\n\n" + code
-    code += (
-        "\n\ndef robohand_println(msg):\n\tglobal robohand_app\n\t"
-        + r"robohand_app.log(msg + '\n')"
-        + "\n"
-    )
+    pre_code = """from tkinter import Tk
+from tkinter import Text
+from tkinter import Scrollbar
 
-    exeFile = open("exe.py", "w")
+robohand_app = Tk()
+robohand_app.title("RoboticHand App")
+robohand_app.geometry("800x600")
+robohand_app.configure(bg="gray18")
+
+robohand_outScroll = Scrollbar(robohand_app)
+robohand_logText = Text(
+    robohand_app,
+    font=("Consolas", 13),
+    height=8,
+    background="gray18",
+    foreground="gray90",
+    selectbackground="magenta4",
+    selectforeground="gray90",
+    insertbackground="magenta2",
+    yscrollcommand=robohand_outScroll.set,
+    borderwidth=0,
+)
+robohand_logText.pack(
+    ipady=5, ipadx=5, pady=5, padx=5, fill="both", side="left", expand=True
+)
+robohand_outScroll.config(command=robohand_logText.yview)
+robohand_outScroll.pack(fill="y", side="right")
+robohand_logText.config(state="disabled")
+
+
+def robohand_println(msg):
+    robohand_logText.config(state="normal")
+    robohand_logText.insert("end", msg + \"\\n\")
+    robohand_logText.see("end")
+    robohand_logText.config(state="disabled")
+
+
+
+"""
+    code = pre_code + code + "\nmain()\nrobohand_app.mainloop()\n"
+
+    exeFile = open("program.py", "w")
     exeFile.write(code)
     exeFile.close()
-    """
-    exe_script = "import script\n\nscript.main()\n"
-
-    exeFile = open("exe.py", "w")
-    exeFile.write(exe_script)
-    exeFile.close()
-    """

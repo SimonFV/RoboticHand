@@ -9,7 +9,7 @@ line_error = 1
 flag_main_found = False
 flag_return = False
 flag_insde_while = False
-value_return = None
+value_return = []
 infinite_loops = 0
 lines_of_error = []
 flag_break_found = False
@@ -33,7 +33,7 @@ def clear():
     flag_main_found = False
     flag_return = False
     flag_insde_while = False
-    value_return = None
+    value_return = []
     lines_of_error = []
     flag_break_found = False
 
@@ -70,9 +70,6 @@ def test(p):
     global flag_insde_while
     global infinite_loops
     global flag_break_found
-
-    if flag_return:
-        return
 
     if type(p) == tuple:
         # Registro de la linea actual
@@ -112,7 +109,7 @@ def test(p):
 
         # Llamada de funciones
         elif p[0] == "call":
-            value_return = None
+            value_return = []
             func_id = p[1] + "." + str(len(p[2]))
             if not is_var_defined(func_id):
                 return
@@ -124,36 +121,40 @@ def test(p):
                     return
                 test(("=", args[i], var))
             test(variables[func_id][2])
-            flag_return = False
             for arg in args:
                 variables.pop(arg)
-            if (variables[func_id][0] == "integer" and type(value_return) != int) or (
-                variables[func_id][0] == "boolean" and type(value_return) != bool
+            if (
+                variables[func_id][0] == "integer"
+                and not test_value_return(value_return, 3)
+            ) or (
+                variables[func_id][0] == "boolean"
+                and not test_value_return(value_return, True)
             ):
                 semantic_error += (
                     "Línea "
                     + str(p[3])
-                    + ": Valor de retorno debe ser "
+                    + ": Los valores de retorno deben ser todos "
                     + variables[func_id][0]
                     + ".\n"
                 )
                 lines_of_error += [p[3]]
                 return None
-            if variables[func_id][0] == "None" and value_return != None:
+            if variables[func_id][0] == "None" and len(value_return) != 0:
                 semantic_error += (
                     "Línea " + str(p[3]) + ": La función no puede retornar un valor.\n"
                 )
                 lines_of_error += [p[3]]
                 return None
-            return value_return
+            if len(value_return) == 0:
+                return None
+            return value_return[0]
 
         # Retorno de funciones
         elif p[0] == "return":
             if p[1] == None:
-                value_return = None
+                value_return += []
             else:
-                value_return = test(p[1])
-            flag_return = True
+                value_return += [test(p[1])]
             return
 
         # Asignacion de variables
@@ -240,6 +241,20 @@ def test(p):
                 return
             infinite_loops -= 1
             flag_break_found = True
+
+        # If - else
+        elif p[0] == "if" or p[0] == "if-else":
+            expr = test(p[1])
+            if type(expr) != bool:
+                semantic_error += (
+                    "Línea "
+                    + str(p[3])
+                    + ": La condición del if debe ser boolean."
+                    + "\n"
+                )
+                lines_of_error += [p[3]]
+                return
+            test(p[2])
 
         # Operaciones matematicas
         elif p[0] == "+":
@@ -412,3 +427,9 @@ def is_var_defined(var):
         return False
     return True
 
+
+def test_value_return(return_list, t):
+    for i in return_list:
+        if type(i) != type(t):
+            return False
+    return True

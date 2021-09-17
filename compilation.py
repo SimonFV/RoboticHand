@@ -3,9 +3,8 @@ import ply.yacc as yacc
 import semantic as sm
 import code_generator as cg
 import importlib
-import exe
 from lexer import tokens
-
+import os
 
 # -------------------------------
 # ANALISIS SINTACTICO
@@ -40,21 +39,13 @@ def p_start(p):
 
 def p_statements(p):
     """
-    statements : statement statements
-               | statement
+    statements : function_definition statements
+               | function_definition
     """
     if len(p) == 3:
         p[0] = (p[1], p[2])
     else:
         p[0] = p[1]
-
-
-def p_statement(p):
-    """
-    statement : assignment
-              | function_definition
-    """
-    p[0] = p[1]
 
 
 def p_empty(p):
@@ -174,6 +165,7 @@ def p_inner_statement(p):
                     | for
                     | while
                     | break
+                    | if_else
     """
     p[0] = p[1]
 
@@ -273,6 +265,21 @@ def p_break(p):
     p[0] = (p[1], 0, 0, p.lineno(1))
 
 
+def p_if_else(p):
+    """
+    if_else : IF expression L_CURLYBRACKET inner_statements R_CURLYBRACKET ELSE L_CURLYBRACKET inner_statements R_CURLYBRACKET
+            | IF expression L_CURLYBRACKET inner_statements R_CURLYBRACKET ELSE if_else
+            | IF expression L_CURLYBRACKET inner_statements R_CURLYBRACKET
+            
+    """
+    if len(p) == 10:
+        p[0] = ("if-else", p[2], (p[4], p[8]), p.lineno(1))
+    elif len(p) == 8:
+        p[0] = ("if-else", p[2], (p[4], p[7]), p.lineno(1))
+    else:
+        p[0] = ("if", p[2], p[4], p.lineno(1))
+
+
 def p_error(p):
     global syntax_error
     if p:
@@ -356,6 +363,7 @@ def compiling(app):
     # Generador de codigo
     cg.translate(tree)
     cg.write_code(app)
+    # os.system("pyinstaller --onefile --windowed program.py")
 
     app.log("\nCompilación finalizada sin errores.\n\n", type_msg="success")
 
@@ -366,14 +374,10 @@ def compiling_running(app):
     compiling(app)
 
     if flag_errors_found:
-        return
+        return False
 
     app.log("Ejecutando...\n", type_msg="info")
-
-    importlib.reload(exe)
-
-    exe.main(app)
-    app.log("\nEjecución completada.\n\n", type_msg="success")
+    return True
 
 
 # Resalta las lineas con error en el IDE
