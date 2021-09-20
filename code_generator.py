@@ -205,6 +205,7 @@ def write_code(app):
     pre_code = """from tkinter import Tk
 from tkinter import Text
 from tkinter import Scrollbar
+from time import sleep
 
 robohand_app = Tk()
 robohand_app.title("RoboticHand App")
@@ -244,6 +245,13 @@ def robohand_Delay(robohand_num, robohand_scale):
     robohand_println(\"Delay: \" + str(robohand_num) + \" \" + robohand_scale)
     robohand_app.update_idletasks()
     robohand_app.update()
+    scale = 1
+    if robohand_scale == "Min":
+        scale = 60
+    elif robohand_scale == "Mil":
+        scale = 0.001
+    sleep(robohand_num*scale)
+
 
 def robohand_Move(robohand_fingers, robohand_side):
     robohand_println(\"Move: \" + str(robohand_fingers) + \" \" + str(robohand_side))

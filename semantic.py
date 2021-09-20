@@ -51,11 +51,11 @@ def get_lines_error():
 def check_semantics(p):
     global variables
     global semantic_error
-    print(p)
+    # print(p)
     test(p)
     if not flag_main_found:
         semantic_error += "No se encontró la función main().\n"
-    print(variables)
+    # print(variables)
 
 
 # Prueba el arbol en busca de errores semanticos
@@ -291,7 +291,7 @@ def test(p):
         # Delay
         elif p[0] == "Delay":
             expr = test(p[1])
-            if (type(expr) != int) or (expr <= 0):
+            if (type(expr) != int) or (expr < 0):
                 semantic_error += (
                     "Línea "
                     + str(p[3])

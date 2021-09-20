@@ -411,8 +411,13 @@ class App:
         if comp.compiling_running(self):
             try:
                 root.update()
-                path = os.path.dirname(os.path.abspath(__file__))
-                os.system(path + "/dist/program.exe")
+                path = (
+                    "python "
+                    + os.path.dirname(os.path.abspath(__file__))
+                    + "/program.py"
+                )
+                command = 'cmd /c "' + path + '"'
+                os.system(command)
                 self.log("\nEjecución completada.\n\n", type_msg="success")
             except:
                 self.log(
