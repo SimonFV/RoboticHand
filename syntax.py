@@ -177,7 +177,7 @@ def p_procedure_call(p):
     split_args(p[3])
     if p[5] == None:
         common_error("semicolon", p.lineno(1))
-    p[0] = ("call", p[1], args, p.lineno(1))
+    p[0] = ("p_call", p[1], args, p.lineno(1))
 
 
 def p_function_call(p):
@@ -187,7 +187,7 @@ def p_function_call(p):
     global args
     args = []
     split_args(p[3])
-    p[0] = ("call", p[1], args, p.lineno(1))
+    p[0] = ("f_call", p[1], args, p.lineno(1))
 
 
 def p_return(p):

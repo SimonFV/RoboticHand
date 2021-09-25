@@ -283,6 +283,9 @@ class App:
 
     # Guarda el código en un archivo
     def save(self):
+        if self.fileName == "":
+            self.log("Archivo sin nombre.\n", type_msg="warning")
+            return
         if self.is_file_saved():
             self.log("Archivo " + self.fileName + " guardado.\n", type_msg="info")
             return

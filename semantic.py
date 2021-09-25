@@ -3,7 +3,7 @@
 # ---------------------------------------------
 
 
-variables = {}  # Tabla de simbolos { nombre/id : valor / [return, args, cuerpo] }
+variables = {}  # Tabla de simbolos { nombre/id : valor / [return,args,cuerpo,linea] }
 semantic_error = ""
 line_error = 1
 flag_main_found = False
@@ -54,7 +54,9 @@ def check_semantics(p):
     # print(p)
     test(p)
     if not flag_main_found:
-        semantic_error += "No se encontró la función main().\n"
+        semantic_error += "No se encontró el procedimiento main().\n"
+    else:
+        test(("p_call", "main", [], variables["main.0"][3]))
     return global_variables()
 
 
@@ -85,16 +87,23 @@ def test(p):
                     semantic_error += (
                         "Línea "
                         + str(p[3])
-                        + ": La función main no debe contener argumentos."
+                        + ": El procedimiento main no debe contener argumentos."
+                        + "\n"
+                    )
+                    lines_of_error += [p[3]]
+                    return
+                if p[0] != "None":
+                    semantic_error += (
+                        "Línea "
+                        + str(p[3])
+                        + ": El procedimiento main no puede retornar valores."
                         + "\n"
                     )
                     lines_of_error += [p[3]]
                     return
                 flag_main_found = True
-                test(p[2])
-                return
 
-            elif func_id in variables:
+            if func_id in variables:
                 semantic_error += (
                     "Línea "
                     + str(p[3])
@@ -105,10 +114,10 @@ def test(p):
                 )
                 lines_of_error += [p[3]]
                 return
-            variables[func_id] = [p[0], args, p[2]]
+            variables[func_id] = [p[0], args, p[2], p[3]]
 
         # Llamada de funciones
-        elif p[0] == "call":
+        elif p[0] == "f_call" or p[0] == "p_call":
             value_return = []
             func_id = p[1] + "." + str(len(p[2]))
             if not is_var_defined(func_id):
@@ -121,8 +130,8 @@ def test(p):
                     return
                 test(("=", args[i], var))
             test(variables[func_id][2])
-            for arg in args:
-                variables.pop(arg)
+            # for arg in args:
+            #    variables.pop(arg)
             if (
                 variables[func_id][0] == "integer"
                 and not test_value_return(value_return, 3)
@@ -132,16 +141,42 @@ def test(p):
             ):
                 semantic_error += (
                     "Línea "
-                    + str(p[3])
-                    + ": Los valores de retorno deben ser todos "
+                    + str(variables[func_id][3])
+                    + ": Los valores de retorno de la función [ "
+                    + p[1]
+                    + " ] deben ser "
                     + variables[func_id][0]
                     + ".\n"
                 )
-                lines_of_error += [p[3]]
+                lines_of_error += [variables[func_id][3]]
                 return None
             if variables[func_id][0] == "None" and len(value_return) != 0:
                 semantic_error += (
-                    "Línea " + str(p[3]) + ": La función no puede retornar un valor.\n"
+                    "Línea "
+                    + str(variables[func_id][3])
+                    + ": El procedimiento [ "
+                    + p[1]
+                    + " ] no puede retornar un valor.\n"
+                )
+                lines_of_error += [variables[func_id][3]]
+                return None
+            if len(value_return) != 0 and p[0] == "p_call":
+                semantic_error += (
+                    "Línea "
+                    + str(p[3])
+                    + ": El valor de retorno de la función [ "
+                    + p[1]
+                    + " ] debe ser capturado.\n"
+                )
+                lines_of_error += [p[3]]
+                return None
+            if len(value_return) == 0 and p[0] == "f_call":
+                semantic_error += (
+                    "Línea "
+                    + str(p[3])
+                    + ": El procedimiento [ "
+                    + p[1]
+                    + " ] no retorna un valor.\n"
                 )
                 lines_of_error += [p[3]]
                 return None
@@ -162,7 +197,11 @@ def test(p):
             var = test(p[2])
             if var == None:
                 semantic_error += (
-                    "Línea " + str(p[3]) + ": Valor de retorno no especificado.\n"
+                    "Línea "
+                    + str(p[3])
+                    + ": Valor de asignación para "
+                    + p[1]
+                    + " no especificado.\n"
                 )
                 lines_of_error += [p[3]]
                 return
@@ -489,6 +528,9 @@ def is_var_defined(var):
 
 
 def test_value_return(return_list, t):
+    if len(return_list) == 0:
+        return False
+
     for i in return_list:
         if type(i) != type(t):
             return False
@@ -500,5 +542,5 @@ def global_variables():
     global_vars = ""
     for i in variables:
         if type(variables[i]) != list:
-            global_vars += "\tglobal " + str(i) + "\n"
+            global_vars += "\tglobal " + str(i) + "_var\n"
     return global_vars

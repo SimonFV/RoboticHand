@@ -152,6 +152,7 @@ t_DELAY = r"Delay"
 def t_WRONG_ID_MAX(t):
     r"[a-zA-Z_#?][a-zA-Z_#?0-9]{15,}"
     global error_msg
+    global lines_of_error
     t.type = RESERVED.get(t.value, "WRONG_ID_MAX")
     if t.type == "WRONG_ID_MAX":
         error_msg += (
@@ -161,6 +162,7 @@ def t_WRONG_ID_MAX(t):
             + str(t.value)
             + ". Máximo 15 caracteres.\n"
         )
+        lines_of_error += [t.lineno]
     return t
 
 
@@ -173,6 +175,7 @@ def t_ID(t):
 def t_WRONG_ID_MIN(t):
     r"[a-zA-Z_#?][a-zA-Z_#?0-9]{1}"
     global error_msg
+    global lines_of_error
     t.type = RESERVED.get(t.value, "WRONG_ID_MIN")
     if t.type == "WRONG_ID_MIN":
         error_msg += (
@@ -182,6 +185,7 @@ def t_WRONG_ID_MIN(t):
             + str(t.value)
             + ". Mínimo 3 caracteres.\n"
         )
+        lines_of_error += [t.lineno]
     return t
 
 

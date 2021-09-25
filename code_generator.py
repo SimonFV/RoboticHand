@@ -34,18 +34,24 @@ def translate(p):
             code += "def " + name + "("
             if len(args) != 0:
                 for i in args:
-                    code += i + ","
+                    code += i + "_arg" + ","
                 code = code[:-1]
             code += "):\n"
             if name == "main_0":
                 code += "\trobohand_app.update_idletasks()\n\trobohand_app.update()\n"
-            code += global_vars + "\n"
+            code += global_vars
+            all_vars = global_vars.split("\n")
+            for arg in args:
+                for var in all_vars:
+                    if var == ("\tglobal " + arg + "_var"):
+                        code += "\t" + arg + "_var = " + arg + "_arg\n"
+            code += "\n"
             translate(p[2])
             scope -= 1
             code += "\n\n"
 
         # Llamada de funciones
-        elif p[0] == "call":
+        elif p[0] == "f_call" or p[0] == "p_call":
             name = p[1].replace("#", "_num_s_").replace("?", "_qust_s_")
             name += "_" + str(len(p[2]))
             code += ("\t" * scope) + name + "("
@@ -66,7 +72,7 @@ def translate(p):
         # Asignacion de variables
         elif p[0] == "=":
             temp = p[1].replace("#", "_num_s_").replace("?", "_qust_s_")
-            code += ("\t" * scope) + temp + " = "
+            code += ("\t" * scope) + temp + "_var" + " = "
             translate(p[2])
             code += "\n"
 
@@ -204,7 +210,10 @@ def translate(p):
         temp = str(p)
         temp = temp.replace("#", "_num_s_")
         temp = temp.replace("?", "_qust_s_")
-        code += temp
+        if type(p) != str:
+            code += temp
+        else:
+            code += temp + "_var"
 
 
 # Crea los archivos de python necesarios para ejecutar el codigo
@@ -257,11 +266,11 @@ def robohand_init():
         robohand_println("Error al conectar con el puerto serial.")
         robohand_println("Revise la conexion o verifique que no haya otro programa ya conectado.")
         robohand_println("Ejecucion detenida.")
-        return
+        #return
     sleep(2)
     robohand_println("Listo!")
     main_0()
-    robohand_ser_arduino.close()
+    #robohand_ser_arduino.close()
 
 
 def robohand_println(msg):
@@ -314,8 +323,8 @@ def robohand_Move(robohand_fingers, robohand_side):
         else:
             return
     
-    robohand_ser_arduino.write(robohand_msg.encode())
-    #robohand_println(robohand_msg)
+    #robohand_ser_arduino.write(robohand_msg.encode())
+    robohand_println(robohand_msg)
 
 
 """
