@@ -47,7 +47,7 @@ class App:
         # Configuración de la ventana
 
         master.title("RoboticHand IDE")
-        master.geometry("800x600")
+        master.geometry("1024x720")
         master.configure(bg="gray20")
         master.iconbitmap("img/robohand_ico.ico")
         master.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -192,8 +192,8 @@ class App:
         self.outScroll.config(command=self.logText.yview)
         self.outScroll.grid(row=1, column=4, sticky=tk.NS)
         self.logText.tag_configure("info", foreground="deep sky blue")
-        self.logText.tag_configure("warning", foreground="yellow2")
-        self.logText.tag_configure("error", foreground="orange red")
+        self.logText.tag_configure("warning", foreground="gold")
+        self.logText.tag_configure("error", foreground="salmon")
         self.logText.tag_configure("success", foreground="SpringGreen2")
         self.logText.tag_configure("normal", foreground="gray90")
         self.logText.config(state="disabled")
@@ -265,13 +265,13 @@ class App:
                 self.save()
 
         loadedFile = tkinter.filedialog.askopenfilename(
-            title="Abrir archivo", filetypes=[("Archivos JERS", "*.jers")]
+            title="Abrir archivo", filetypes=[("Archivos de Texto", "*.txt")]
         )
         if not loadedFile:
             return
         self.fileRute = loadedFile
         self.fileName = ntpath.basename(self.fileRute)
-        self.fileName = self.fileName[:-5]
+        self.fileName = self.fileName[:-4]
         self.fileEntry.delete(0, tk.END)
         self.fileEntry.insert(0, self.fileName)
         self.activate_text()
@@ -279,24 +279,26 @@ class App:
         loadedFile = open(loadedFile, "r")
         self.codeText.insert(tk.END, loadedFile.read())
         loadedFile.close()
+        self.log("Archivo cargado: " + self.fileName + "\n")
 
     # Guarda el código en un archivo
     def save(self):
         if self.is_file_saved():
+            self.log("Archivo " + self.fileName + " guardado.\n", type_msg="info")
             return
         # Guardar como...
         if self.fileRute == "" or self.fileName != self.fileEntry.get():
             savedFile = tkinter.filedialog.asksaveasfilename(
                 defaultextension=".*",
                 title="Guardar archivo",
-                filetypes=[("Archivo JERS", "*.jers")],
+                filetypes=[("Archivo de Texto", "*.txt")],
                 initialfile=self.fileEntry.get(),
             )
             if not savedFile:
                 return
             self.fileRute = savedFile
             self.fileName = ntpath.basename(self.fileRute)
-            self.fileName = self.fileName[:-5]
+            self.fileName = self.fileName[:-4]
             self.fileEntry.delete(0, tk.END)
             self.fileEntry.insert(0, self.fileName)
 
@@ -310,7 +312,7 @@ class App:
             savedFile.write(self.codeText.get("1.0", "end-1c"))
             savedFile.close()
 
-        self.log("Archivo guardado.\n", type_msg="info")
+        self.log("Archivo " + self.fileName + " guardado.\n", type_msg="info")
 
     # Activa la zona de edición de texto para editar un archivo
     def activate_text(self):
@@ -418,7 +420,7 @@ class App:
                 )
                 command = 'cmd /c "' + path + '"'
                 os.system(command)
-                self.log("\nEjecución completada.\n\n", type_msg="success")
+                self.log("\nEjecución finalizada.\n\n", type_msg="info")
             except:
                 self.log(
                     "\nError inesperado durante la ejecución.\n\n", type_msg="error"

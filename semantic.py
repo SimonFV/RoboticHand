@@ -55,7 +55,7 @@ def check_semantics(p):
     test(p)
     if not flag_main_found:
         semantic_error += "No se encontró la función main().\n"
-    # print(variables)
+    return global_variables()
 
 
 # Prueba el arbol en busca de errores semanticos
@@ -493,3 +493,12 @@ def test_value_return(return_list, t):
         if type(i) != type(t):
             return False
     return True
+
+
+def global_variables():
+    global variables
+    global_vars = ""
+    for i in variables:
+        if type(variables[i]) != list:
+            global_vars += "\tglobal " + str(i) + "\n"
+    return global_vars

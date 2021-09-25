@@ -2,6 +2,7 @@ import sys
 
 scope = 0
 code = ""
+global_vars = ""
 
 # Limpia las variables globales
 def clear():
@@ -11,8 +12,14 @@ def clear():
     scope = 0
 
 
+def set_global_vars(global_vars_p):
+    global global_vars
+    global_vars = global_vars_p
+
+
 # Inicia la conversion de codigo desde el arbol a un archivo con codigo python
 def translate(p):
+    global global_vars
     global scope
     global code
 
@@ -22,23 +29,26 @@ def translate(p):
         if p[0] == "integer" or p[0] == "boolean" or p[0] == "None":
             scope += 1
             args = p[1][1:]
-            temp = p[1][0].replace("#", "_num_s_").replace("?", "_qust_s_")
-            code += "def " + temp + "("
+            name = p[1][0].replace("#", "_num_s_").replace("?", "_qust_s_")
+            name += "_" + str(len(args))
+            code += "def " + name + "("
             if len(args) != 0:
                 for i in args:
                     code += i + ","
                 code = code[:-1]
             code += "):\n"
-            if temp == "main":
-                code += "\trobohand_app.update_idletasks()\n\trobohand_app.update()\n\n"
+            if name == "main_0":
+                code += "\trobohand_app.update_idletasks()\n\trobohand_app.update()\n"
+            code += global_vars + "\n"
             translate(p[2])
             scope -= 1
             code += "\n\n"
 
         # Llamada de funciones
         elif p[0] == "call":
-            temp = p[1].replace("#", "_num_s_").replace("?", "_qust_s_")
-            code += ("\t" * scope) + temp + "("
+            name = p[1].replace("#", "_num_s_").replace("?", "_qust_s_")
+            name += "_" + str(len(p[2]))
+            code += ("\t" * scope) + name + "("
             if len(p[2]) != 0:
                 for i in p[2]:
                     translate(i)
@@ -198,7 +208,7 @@ def translate(p):
 
 
 # Crea los archivos de python necesarios para ejecutar el codigo
-def write_code(app):
+def write_code():
     global code
 
     # Agrega la funcion para imprimir en el IDE
@@ -206,6 +216,10 @@ def write_code(app):
 from tkinter import Text
 from tkinter import Scrollbar
 from time import sleep
+import serial
+
+robohand_debug = True
+robohand_ser_arduino = None
 
 robohand_app = Tk()
 robohand_app.title("RoboticHand App")
@@ -232,19 +246,38 @@ robohand_outScroll.config(command=robohand_logText.yview)
 robohand_outScroll.pack(fill="y", side="right")
 robohand_logText.config(state="disabled")
 
+def robohand_init():
+    global robohand_ser_arduino
+    usbport = "COM4"
+
+    robohand_println("Conectando con la mano...")
+    try:
+        robohand_ser_arduino = serial.Serial(usbport, 9600, timeout=2)
+    except:
+        robohand_println("Error al conectar con el puerto serial.")
+        robohand_println("Revise la conexion o verifique que no haya otro programa ya conectado.")
+        robohand_println("Ejecucion detenida.")
+        return
+    sleep(2)
+    robohand_println("Listo!")
+    main_0()
+    robohand_ser_arduino.close()
+
 
 def robohand_println(msg):
     robohand_logText.config(state="normal")
-    robohand_logText.insert("end", msg + \"\\n\")
+    robohand_logText.insert("end", msg + "\\n")
     robohand_logText.see("end")
     robohand_logText.config(state="disabled")
     robohand_app.update_idletasks()
     robohand_app.update()
 
 def robohand_Delay(robohand_num, robohand_scale):
-    robohand_println(\"Delay: \" + str(robohand_num) + \" \" + robohand_scale)
-    robohand_app.update_idletasks()
-    robohand_app.update()
+    global robohand_debug
+    if robohand_debug:
+        robohand_println("Delay: " + str(robohand_num) + " " + robohand_scale)
+        robohand_app.update_idletasks()
+        robohand_app.update()
     scale = 1
     if robohand_scale == "Min":
         scale = 60
@@ -254,13 +287,39 @@ def robohand_Delay(robohand_num, robohand_scale):
 
 
 def robohand_Move(robohand_fingers, robohand_side):
-    robohand_println(\"Move: \" + str(robohand_fingers) + \" \" + str(robohand_side))
-    robohand_app.update_idletasks()
-    robohand_app.update()
+    global robohand_debug
+    global robohand_ser_arduino
+    if robohand_debug:
+        robohand_println("Move: " + str(robohand_fingers) + " " + str(robohand_side))
+        robohand_app.update_idletasks()
+        robohand_app.update()
+    
+    robohand_msg = ""
+    robohand_angle = 180
+    if robohand_side:
+        robohand_angle = 0
+    for robohand_finger in robohand_fingers:
+        if robohand_finger == "P":
+            robohand_msg += "1," + str(robohand_angle) + "b"
+        elif robohand_finger == "I":
+            robohand_msg += "2," + str(robohand_angle) + "b"
+        elif robohand_finger == "M":
+            robohand_msg += "3," + str(robohand_angle) + "b"
+        elif robohand_finger == "A":
+            robohand_msg += "4," + str(robohand_angle) + "b"
+        elif robohand_finger == "Q":
+            robohand_msg += "5," + str(robohand_angle) + "b"
+        elif robohand_finger == "T":
+            robohand_msg += "6," + str(robohand_angle) + "b"
+        else:
+            return
+    
+    robohand_ser_arduino.write(robohand_msg.encode())
+    #robohand_println(robohand_msg)
 
 
 """
-    code = pre_code + code + "\nmain()\nrobohand_app.mainloop()\n"
+    code = pre_code + code + "\nrobohand_init()\nrobohand_app.mainloop()\n"
 
     exeFile = open("program.py", "w")
     exeFile.write(code)
