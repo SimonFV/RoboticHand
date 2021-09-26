@@ -266,11 +266,11 @@ def robohand_init():
         robohand_println("Error al conectar con el puerto serial.")
         robohand_println("Revise la conexion o verifique que no haya otro programa ya conectado.")
         robohand_println("Ejecucion detenida.")
-        #return
+        return
     sleep(2)
     robohand_println("Listo!")
     main_0()
-    #robohand_ser_arduino.close()
+    robohand_ser_arduino.close()
 
 
 def robohand_println(msg):
@@ -304,27 +304,27 @@ def robohand_Move(robohand_fingers, robohand_side):
         robohand_app.update()
     
     robohand_msg = ""
-    robohand_angle = 180
+    robohand_angle = "180"
     if robohand_side:
-        robohand_angle = 0
+        robohand_angle = "000"
     for robohand_finger in robohand_fingers:
         if robohand_finger == "P":
-            robohand_msg += "1," + str(robohand_angle) + "b"
+            robohand_msg += "1," + robohand_angle + "b"
         elif robohand_finger == "I":
-            robohand_msg += "2," + str(robohand_angle) + "b"
+            robohand_msg += "2," + robohand_angle + "b"
         elif robohand_finger == "M":
-            robohand_msg += "3," + str(robohand_angle) + "b"
+            robohand_msg += "3," + robohand_angle + "b"
         elif robohand_finger == "A":
-            robohand_msg += "4," + str(robohand_angle) + "b"
+            robohand_msg += "4," + robohand_angle + "b"
         elif robohand_finger == "Q":
-            robohand_msg += "5," + str(robohand_angle) + "b"
+            robohand_msg += "5," + robohand_angle + "b"
         elif robohand_finger == "T":
-            robohand_msg += "6," + str(robohand_angle) + "b"
+            robohand_msg += "6," + robohand_angle + "b"
         else:
             return
     
-    #robohand_ser_arduino.write(robohand_msg.encode())
-    robohand_println(robohand_msg)
+    robohand_ser_arduino.write(robohand_msg.encode())
+    #robohand_println(robohand_msg)
 
 
 """

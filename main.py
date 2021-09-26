@@ -8,6 +8,7 @@ import tkinter as tk
 import ntpath
 import compilation as comp
 import os
+from subprocess import Popen
 
 # Canvas para los numeros de las lineas
 class customLineCanvas(tk.Canvas):
@@ -43,6 +44,8 @@ class App:
         self.fileRute = ""
         self.fileName = ""
         self.isShown = True
+        self.process = 0
+        self.isRunning = False
 
         # Configuración de la ventana
 
@@ -401,8 +404,23 @@ class App:
     def get_text(self):
         return self.codeText.get("1.0", "end-1c")
 
+    # Espera a que la ejecucion del programa termine
+    def running(self):
+        poll = self.process.poll()
+        if poll is not None:
+            self.isRunning = False
+            self.log("\nEjecución finalizada.\n\n", type_msg="info")
+        else:
+            root.after(500, self.running)
+
     # Compila el código
     def compile_code(self):
+        if self.isRunning:
+            self.log(
+                "Ejecución en proceso. Cierre el programa para continuar.\n",
+                type_msg="warning",
+            )
+            return
         if self.get_text() == "":
             self.log("Sin código...\n", type_msg="warning")
             return
@@ -410,6 +428,12 @@ class App:
 
     # Compila y ejecuta el código
     def compile_run(self):
+        if self.isRunning:
+            self.log(
+                "Ejecución en proceso. Cierre el programa para continuar.\n",
+                type_msg="warning",
+            )
+            return
         if self.get_text() == "":
             self.log("Sin código...\n", type_msg="warning")
             return
@@ -421,12 +445,15 @@ class App:
                     + os.path.dirname(os.path.abspath(__file__))
                     + "/program.py"
                 )
-                command = 'cmd /c "' + path + '"'
-                os.system(command)
-                self.log("\nEjecución finalizada.\n\n", type_msg="info")
+                # command = 'cmd /c "' + path + '"'
+                # os.system(command)
+                self.process = Popen(["python", "program.py"])
+                self.isRunning = True
+                self.running()
             except:
                 self.log(
-                    "\nError inesperado durante la ejecución.\n\n", type_msg="error"
+                    "\nError inesperado al intentar ejecutar el programa.\n\n",
+                    type_msg="error",
                 )
 
 
