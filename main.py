@@ -8,7 +8,7 @@ import tkinter as tk
 import ntpath
 import compilation as comp
 import os
-from subprocess import Popen
+from subprocess import Popen, PIPE
 
 # Canvas para los numeros de las lineas
 class customLineCanvas(tk.Canvas):
@@ -439,15 +439,13 @@ class App:
             return
         if comp.compiling_running(self):
             try:
-                root.update()
-                path = (
+                command = (
                     "python "
                     + os.path.dirname(os.path.abspath(__file__))
                     + "/program.py"
                 )
-                # command = 'cmd /c "' + path + '"'
-                # os.system(command)
-                self.process = Popen(["python", "program.py"])
+
+                self.process = Popen(command, stdout=PIPE, stderr=PIPE, stdin=PIPE,)
                 self.isRunning = True
                 self.running()
             except:

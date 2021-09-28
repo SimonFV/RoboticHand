@@ -38,7 +38,7 @@ def translate(p):
                 code = code[:-1]
             code += "):\n"
             if name == "main_0":
-                code += "\trobohand_app.update_idletasks()\n\trobohand_app.update()\n"
+                code += '\trobohand_println("Listo!")\n\trobohand_app.update_idletasks()\n\trobohand_app.update()\n'
             code += global_vars
             all_vars = global_vars.split("\n")
             for arg in args:
@@ -54,13 +54,17 @@ def translate(p):
         elif p[0] == "f_call" or p[0] == "p_call":
             name = p[1].replace("#", "_num_s_").replace("?", "_qust_s_")
             name += "_" + str(len(p[2]))
-            code += ("\t" * scope) + name + "("
+            if p[0] == "p_call":
+                code += "\t" * scope
+            code += name + "("
             if len(p[2]) != 0:
                 for i in p[2]:
                     translate(i)
                     code += ","
                 code = code[:-1]
-            code += ")\n"
+            code += ")"
+            if p[0] == "p_call":
+                code += "\n"
             return
 
         # Return de funciones
@@ -224,16 +228,33 @@ def write_code():
     pre_code = """from tkinter import Tk
 from tkinter import Text
 from tkinter import Scrollbar
+from tkinter import Checkbutton
+from tkinter import IntVar
 from time import sleep
 import serial
 
-robohand_debug = True
+
 robohand_ser_arduino = None
 
 robohand_app = Tk()
 robohand_app.title("RoboticHand App")
 robohand_app.geometry("800x600")
 robohand_app.configure(bg="gray18")
+
+robohand_debug = IntVar(value=0)
+robohand_lockDebug = Checkbutton(
+    robohand_app,
+    text="Debug",
+    borderwidth=0,
+    bg="gray22",
+    fg="gray80",
+    font=("Arial", 10),
+    activebackground="gray40",
+    variable=robohand_debug,
+    onvalue=1,
+    offvalue=0,
+)
+robohand_lockDebug.pack(fill="x", side="top")
 
 robohand_outScroll = Scrollbar(robohand_app)
 robohand_logText = Text(
@@ -254,6 +275,9 @@ robohand_logText.pack(
 robohand_outScroll.config(command=robohand_logText.yview)
 robohand_outScroll.pack(fill="y", side="right")
 robohand_logText.config(state="disabled")
+robohand_logText.tag_configure("debug", foreground="deep sky blue")
+robohand_logText.tag_configure("normal", foreground="gray90")
+
 
 def robohand_init():
     global robohand_ser_arduino
@@ -264,27 +288,27 @@ def robohand_init():
         robohand_ser_arduino = serial.Serial(usbport, 9600, timeout=2)
     except:
         robohand_println("Error al conectar con el puerto serial.")
-        robohand_println("Revise la conexion o verifique que no haya otro programa ya conectado.")
+        robohand_println(
+            "Revise la conexion o verifique que no haya otro programa ya conectado."
+        )
         robohand_println("Ejecucion detenida.")
-        return
-    sleep(2)
-    robohand_println("Listo!")
-    main_0()
-    robohand_ser_arduino.close()
+        # return
+    robohand_app.after(3000, main_0)
 
 
-def robohand_println(msg):
+def robohand_println(robohand_msg, robohan_debug_type="normal"):
     robohand_logText.config(state="normal")
-    robohand_logText.insert("end", msg + "\\n")
+    robohand_logText.insert("end", robohand_msg + "\\n", robohan_debug_type)
     robohand_logText.see("end")
     robohand_logText.config(state="disabled")
     robohand_app.update_idletasks()
     robohand_app.update()
 
+
 def robohand_Delay(robohand_num, robohand_scale):
     global robohand_debug
-    if robohand_debug:
-        robohand_println("Delay: " + str(robohand_num) + " " + robohand_scale)
+    if robohand_debug.get() == 1:
+        robohand_println("Delay: " + str(robohand_num) + " " + robohand_scale, "debug")
         robohand_app.update_idletasks()
         robohand_app.update()
     scale = 1
@@ -292,17 +316,19 @@ def robohand_Delay(robohand_num, robohand_scale):
         scale = 60
     elif robohand_scale == "Mil":
         scale = 0.001
-    sleep(robohand_num*scale)
+    sleep(robohand_num * scale)
 
 
 def robohand_Move(robohand_fingers, robohand_side):
     global robohand_debug
     global robohand_ser_arduino
-    if robohand_debug:
-        robohand_println("Move: " + str(robohand_fingers) + " " + str(robohand_side))
+    if robohand_debug.get() == 1:
+        robohand_println(
+            "Move: " + str(robohand_fingers) + " " + str(robohand_side), "debug"
+        )
         robohand_app.update_idletasks()
         robohand_app.update()
-    
+
     robohand_msg = ""
     robohand_angle = "180"
     if robohand_side:
@@ -322,9 +348,8 @@ def robohand_Move(robohand_fingers, robohand_side):
             robohand_msg += "6," + robohand_angle + "b"
         else:
             return
-    
-    robohand_ser_arduino.write(robohand_msg.encode())
-    #robohand_println(robohand_msg)
+
+    # robohand_ser_arduino.write(robohand_msg.encode())
 
 
 """

@@ -118,10 +118,10 @@ def test(p):
 
         # Llamada de funciones
         elif p[0] == "f_call" or p[0] == "p_call":
-            value_return = []
             func_id = p[1] + "." + str(len(p[2]))
             if not is_var_defined(func_id):
                 return
+            value_return += [[]]
             new_args = p[2]
             args = variables[func_id][1]
             for i in range(len(new_args)):
@@ -130,14 +130,14 @@ def test(p):
                     return
                 test(("=", args[i], var))
             test(variables[func_id][2])
-            # for arg in args:
-            #    variables.pop(arg)
+            l_value_return = value_return.pop()
+
             if (
                 variables[func_id][0] == "integer"
-                and not test_value_return(value_return, 3)
+                and not test_value_return(l_value_return, 3)
             ) or (
                 variables[func_id][0] == "boolean"
-                and not test_value_return(value_return, True)
+                and not test_value_return(l_value_return, True)
             ):
                 semantic_error += (
                     "Línea "
@@ -150,7 +150,7 @@ def test(p):
                 )
                 lines_of_error += [variables[func_id][3]]
                 return None
-            if variables[func_id][0] == "None" and len(value_return) != 0:
+            if variables[func_id][0] == "None" and len(l_value_return) != 0:
                 semantic_error += (
                     "Línea "
                     + str(variables[func_id][3])
@@ -160,7 +160,7 @@ def test(p):
                 )
                 lines_of_error += [variables[func_id][3]]
                 return None
-            if len(value_return) != 0 and p[0] == "p_call":
+            if len(l_value_return) != 0 and p[0] == "p_call":
                 semantic_error += (
                     "Línea "
                     + str(p[3])
@@ -170,7 +170,7 @@ def test(p):
                 )
                 lines_of_error += [p[3]]
                 return None
-            if len(value_return) == 0 and p[0] == "f_call":
+            if len(l_value_return) == 0 and p[0] == "f_call":
                 semantic_error += (
                     "Línea "
                     + str(p[3])
@@ -180,16 +180,16 @@ def test(p):
                 )
                 lines_of_error += [p[3]]
                 return None
-            if len(value_return) == 0:
+            if len(l_value_return) == 0:
                 return None
-            return value_return[0]
+            return l_value_return[0]
 
         # Retorno de funciones
         elif p[0] == "return":
             if p[1] == None:
-                value_return += []
+                value_return[len(value_return) - 1] += []
             else:
-                value_return += [test(p[1])]
+                value_return[len(value_return) - 1] += [test(p[1])]
             return
 
         # Asignacion de variables
