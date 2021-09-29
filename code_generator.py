@@ -354,7 +354,7 @@ def robohand_Move(robohand_fingers, robohand_side):
     robohand_msg = ""
     robohand_angle = "180"
     if robohand_side:
-        robohand_angle = "000"
+        robohand_angle = "090"
     for robohand_finger in robohand_fingers:
         if robohand_finger == "P":
             robohand_msg += "1," + robohand_angle + "b"
