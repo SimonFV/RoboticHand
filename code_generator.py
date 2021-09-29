@@ -82,7 +82,7 @@ def translate(p):
 
         # Iteradores
         elif p[0] == "for=" or p[0] == "for":
-            code += ("\t" * scope) + "for " + p[1][0] + " in range("
+            code += ("\t" * scope) + "for " + p[1][0] + "_var in range("
             translate(p[1][1])
             code += ", "
             if p[0] == "for=":
@@ -371,7 +371,10 @@ def robohand_Move(robohand_fingers, robohand_side):
         else:
             return
 
-    robohand_ser_arduino.write(robohand_msg.encode())
+    try:
+        robohand_ser_arduino.write(robohand_msg.encode())
+    except:
+        robohand_println("Problema al enviar el mensaje a la mano", "error");
 
 
 """
