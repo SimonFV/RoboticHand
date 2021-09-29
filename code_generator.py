@@ -293,7 +293,7 @@ def robohand_init():
             "Revise la conexion o verifique que no haya otro programa ya conectado."
         )
         robohand_println("Ejecucion detenida.", "debug")
-        # return
+        return
     robohand_app.after(3000, main_0)
 
 
@@ -371,11 +371,13 @@ def robohand_Move(robohand_fingers, robohand_side):
         else:
             return
 
-    # robohand_ser_arduino.write(robohand_msg.encode())
+    robohand_ser_arduino.write(robohand_msg.encode())
 
 
 """
     code = pre_code + code + "\nrobohand_init()\nrobohand_app.mainloop()\n"
+    code = code.encode("ascii", "ignore")
+    code = code.decode("utf-8", "ignore")
 
     exeFile = open("program.py", "w")
     exeFile.write(code)
