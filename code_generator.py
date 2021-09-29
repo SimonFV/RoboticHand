@@ -282,7 +282,7 @@ robohand_logText.tag_configure("normal", foreground="gray90")
 
 def robohand_init():
     global robohand_ser_arduino
-    usbport = "COM4"
+    usbport = "COM5"
 
     robohand_println("Conectando con la mano...", "debug")
     try:

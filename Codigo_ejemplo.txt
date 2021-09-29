@@ -1,0 +1,74 @@
+
+@ Funcion principal
+fn main(){
+	println!("Cerrando los dedos");
+	Move("T", False);
+	Delay(2, "Seg");
+	
+	println!("Abriendo los dedos uno a uno...");
+	for iter in 1..=5{
+		if (iter == 1) {
+			Move("P", True);
+		}
+		else if (iter == 2){
+			Move("I", True);
+		}
+		else if (iter == 3){
+			Move("M", True);
+		}
+		else if (iter == 4){
+			Move("A", True);
+		}
+		else if (iter == 5){
+			Move("Q", True);
+		}
+		Delay(1, "Seg");
+	}
+	
+	Delay(2500, "Mil");
+	let var = foo1(4);
+	println!("Variable retornada por foo1: ", var);
+
+	
+	let num_iter = 0;
+	println!("Moviendo dedo medio... ");
+	foo1();
+	
+}
+
+fn foo1(number) -> integer {
+	if isGreaterThan3(number){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+fn isGreaterThan3(number) -> boolean {
+	return (number >= 3);
+}
+
+
+fn foo1(){
+	let direction = False;
+	loop {
+		if (num_iter > 5){
+			break;
+		}
+		Move("M", direction);
+		Delay(1500, "Mil");
+	
+		@ Cambia el sentido
+		if direction {
+			let direction = False;
+		}
+		else {
+			let direction = True;
+		}
+	
+		@ Aumenta el iterador en 1
+		let num_iter = Opera(+, num_iter, Opera(-, 2, 1));
+	}
+}
+
