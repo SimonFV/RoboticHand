@@ -51,7 +51,6 @@ def get_lines_error():
 def check_semantics(p):
     global variables
     global semantic_error
-    # print(p)
     test(p)
     if not flag_main_found:
         semantic_error += "No se encontró el procedimiento main().\n"

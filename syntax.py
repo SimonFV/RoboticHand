@@ -11,15 +11,18 @@ args = []  # Argumentos temporales de las funciones
 syntax_error = ""  # Pila de errores sintacticos
 lines_of_error = []
 tree = ()
+fixed_branch = ()
 
 
 def clear():
     global syntax_error
     global lines_of_error
     global tree
+    global fixed_branch
     syntax_error = ""
     lines_of_error = []
     tree = ()
+    fixed_branch = ()
 
 
 def get_error():
@@ -43,10 +46,13 @@ precedence = (
 def p_start(p):
     """
     start : statements
-          | empty
     """
     global tree
+    global fixed_branch
     tree = p[1]
+    fixed_branch = ()
+    fix_branch(tree)
+    tree = fixed_branch
 
 
 def p_statements(p):
@@ -54,6 +60,7 @@ def p_statements(p):
     statements : function_definition statements
                | function_definition
     """
+
     if len(p) == 3:
         p[0] = (p[1], p[2])
     else:
@@ -159,12 +166,16 @@ def p_function_definition(p):
                         | FUNCTION ID L_PAREN id_arguments R_PAREN L_CURLYBRACKET inner_statements R_CURLYBRACKET
     """
     global args
+    global fixed_branch
+    fixed_branch = ()
     args = []
     split_args(p[4])
     if len(p) == 11:
-        p[0] = (p[7], [p[2]] + args, p[9], p.lineno(1))
+        fix_branch(p[9])
+        p[0] = (p[7], [p[2]] + args, fixed_branch, p.lineno(1))
     else:
-        p[0] = ("None", [p[2]] + args, p[7], p.lineno(1))
+        fix_branch(p[7])
+        p[0] = ("None", [p[2]] + args, fixed_branch, p.lineno(1))
 
 
 def p_procedure_call(p):
@@ -269,10 +280,14 @@ def p_for(p):
     for : FOR ID IN expression DOT_DOT ASSIGN expression L_CURLYBRACKET inner_statements R_CURLYBRACKET
         | FOR ID IN expression DOT_DOT expression L_CURLYBRACKET inner_statements R_CURLYBRACKET
     """
+    global fixed_branch
+    fixed_branch = ()
     if len(p) == 11:
-        p[0] = ("for=", [p[2], p[4], p[7]], p[9], p.lineno(1))
+        fix_branch(p[9])
+        p[0] = ("for=", [p[2], p[4], p[7]], fixed_branch, p.lineno(1))
     else:
-        p[0] = ("for", [p[2], p[4], p[6]], p[8], p.lineno(1))
+        fix_branch(p[8])
+        p[0] = ("for", [p[2], p[4], p[6]], fixed_branch, p.lineno(1))
 
 
 def p_while(p):
@@ -280,10 +295,14 @@ def p_while(p):
     while : WHILE expression L_CURLYBRACKET inner_statements R_CURLYBRACKET
           | LOOP L_CURLYBRACKET inner_statements R_CURLYBRACKET
     """
+    global fixed_branch
+    fixed_branch = ()
     if len(p) == 6:
-        p[0] = (p[1], p[2], p[4], p.lineno(1))
+        fix_branch(p[4])
+        p[0] = (p[1], p[2], fixed_branch, p.lineno(1))
     else:
-        p[0] = (p[1], 0, p[3], p.lineno(1))
+        fix_branch(p[3])
+        p[0] = (p[1], 0, fixed_branch, p.lineno(1))
 
 
 def p_break(p):
@@ -303,12 +322,25 @@ def p_if_else(p):
             | IF expression L_CURLYBRACKET inner_statements R_CURLYBRACKET
             
     """
+    global fixed_branch
+    fixed_branch = ()
     if len(p) == 10:
-        p[0] = ("if-else", p[2], (p[4], p[8]), p.lineno(1))
+        fix_branch(p[4])
+        branch1 = fixed_branch
+        fixed_branch = ()
+        fix_branch(p[8])
+        branch2 = fixed_branch
+        p[0] = ("if-else", p[2], (branch1, branch2), p.lineno(1))
     elif len(p) == 8:
-        p[0] = ("if-else", p[2], (p[4], p[7]), p.lineno(1))
+        fix_branch(p[4])
+        branch1 = fixed_branch
+        fixed_branch = ()
+        fix_branch(p[7])
+        branch2 = fixed_branch
+        p[0] = ("if-else", p[2], (branch1, branch2), p.lineno(1))
     else:
-        p[0] = ("if", p[2], p[4], p.lineno(1))
+        fix_branch(p[4])
+        p[0] = ("if", p[2], fixed_branch, p.lineno(1))
 
 
 def p_move(p):
@@ -359,6 +391,15 @@ def split_args(a):
             split_args(i)
     elif a != None:
         args.append(a)
+
+
+def fix_branch(p):
+    global fixed_branch
+    if type(p[0]) == tuple:
+        for i in range(len(p)):
+            fix_branch(p[i])
+    else:
+        fixed_branch += (p,)
 
 
 # Manejo de errores sintacticos

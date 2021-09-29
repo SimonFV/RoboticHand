@@ -2,6 +2,7 @@ import lexer as lx
 import syntax as sx
 import semantic as sm
 import code_generator as cg
+import pprint
 
 
 # Variables globales
@@ -30,10 +31,10 @@ def compiling(app):
         tok = lx.lexer.token()
         if not tok:
             break
-        # else:
-        # app.log("Tokens encontrados:\n", type_msg="info")
-        # app.log(str(tok) + "\n", type_msg="success")
+        elif app.lockDebug.get() == 1:
+            app.log(str(tok) + "\n")
     if lx.get_error() != "":  # Detiene la compilacion: ERROR LEXICO
+        app.log("Errores léxicos encontrados:\n", type_msg="warning")
         flag_errors_found = True
         lines_with_errors += lx.get_lines_error()
         highlight_errors(app)
@@ -45,21 +46,31 @@ def compiling(app):
     # Analisis sintactico
     tree = sx.run_parser(app.get_text())
     if sx.get_error() != "":  # Detiene la compilacion: ERROR SINTACTICO
+        app.log("Errores sintácticos encontrados:\n", type_msg="warning")
         flag_errors_found = True
         lines_with_errors += sx.get_lines_error()
         app.log(sx.get_error(), type_msg="error")
         highlight_errors(app)
         return
+    if app.lockDebug.get() == 1:
+        tree_print = pprint.pformat(tree)
+        app.log("\nArbol de parseo:\n", type_msg="info")
+        app.log(tree_print + "\n\n")
     app.log("No se encontraron errores sintácticos.\n")
 
     # Analisis semantico
     global_vars = sm.check_semantics(tree)
     if sm.get_error() != "":  # Detiene la compilacion: ERROR SEMANTICO
+        app.log("Errores semánticos encontrados:\n", type_msg="warning")
         flag_errors_found = True
         app.log(sm.get_error(), type_msg="error")
         lines_with_errors += sm.get_lines_error()
         highlight_errors(app)
         return
+    if app.lockDebug.get() == 1:
+        dict_vars = pprint.pformat(sm.variables)
+        app.log("\nTabla de símbolos:\n", type_msg="info")
+        app.log(dict_vars + "\n\n")
     app.log("No se encontraron errores semánticos.\n")
 
     # Generador de codigo

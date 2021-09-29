@@ -1,6 +1,6 @@
 import sys
 
-scope = 0
+scope = 1
 code = ""
 global_vars = ""
 
@@ -9,7 +9,7 @@ def clear():
     global code
     global scope
     code = ""
-    scope = 0
+    scope = 1
 
 
 def set_global_vars(global_vars_p):
@@ -38,17 +38,17 @@ def translate(p):
                 code = code[:-1]
             code += "):\n"
             if name == "main_0":
-                code += '\trobohand_println("Listo!")\n\trobohand_app.update_idletasks()\n\trobohand_app.update()\n'
+                code += '\trobohand_println("Listo!", "debug")\n\trobohand_app.update_idletasks()\n\trobohand_app.update()\n'
             code += global_vars
             all_vars = global_vars.split("\n")
             for arg in args:
                 for var in all_vars:
                     if var == ("\tglobal " + arg + "_var"):
                         code += "\t" + arg + "_var = " + arg + "_arg\n"
-            code += "\n"
+            code += "\ttry:\n"
             translate(p[2])
             scope -= 1
-            code += "\n\n"
+            code += "\texcept Exception as ex:\n\t\trobohand_print_exception(ex)\n\n"
 
         # Llamada de funciones
         elif p[0] == "f_call" or p[0] == "p_call":
@@ -276,6 +276,7 @@ robohand_outScroll.config(command=robohand_logText.yview)
 robohand_outScroll.pack(fill="y", side="right")
 robohand_logText.config(state="disabled")
 robohand_logText.tag_configure("debug", foreground="deep sky blue")
+robohand_logText.tag_configure("error", foreground="salmon")
 robohand_logText.tag_configure("normal", foreground="gray90")
 
 
@@ -283,17 +284,38 @@ def robohand_init():
     global robohand_ser_arduino
     usbport = "COM4"
 
-    robohand_println("Conectando con la mano...")
+    robohand_println("Conectando con la mano...", "debug")
     try:
         robohand_ser_arduino = serial.Serial(usbport, 9600, timeout=2)
     except:
-        robohand_println("Error al conectar con el puerto serial.")
+        robohand_println("Error al conectar con el puerto serial.", "error")
         robohand_println(
             "Revise la conexion o verifique que no haya otro programa ya conectado."
         )
-        robohand_println("Ejecucion detenida.")
+        robohand_println("Ejecucion detenida.", "debug")
         # return
     robohand_app.after(3000, main_0)
+
+
+def robohand_print_exception(ex):
+    if type(ex).__name__ != "NameError":
+        robohand_println("Error desconocido durante la ejecucion.", "error")
+        return
+    tb = ex.__traceback__
+    if tb is not None:
+        name_var = str(ex).split()[1].strip("'")
+        name_var = name_var[:-4]
+        name_func = tb.tb_frame.f_code.co_name.split("_")
+        func = ""
+        for i in range(len(name_func) - 1):
+            func += name_func[i]
+        robohand_println(
+            "Variable "
+            + name_var
+            + " llamada antes de definirse, en la funcion "
+            + func,
+            "error"
+        )
 
 
 def robohand_println(robohand_msg, robohan_debug_type="normal"):

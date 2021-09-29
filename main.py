@@ -47,6 +47,44 @@ class App:
         self.process = 0
         self.isRunning = False
 
+        # Coloreado de palabras clave
+        # Palabras reservadas
+        self.RESERVED = {
+            "True": "constant",
+            "False": "constant",
+            "let": "function",
+            "Opera": "built_in",
+            "fn": "function",
+            "integer": "keys",
+            "boolean": "keys",
+            "return": "keys",
+            "println": "built_in",
+            "for": "keys",
+            "in": "keys",
+            "while": "keys",
+            "loop": "keys",
+            "break": "keys",
+            "if": "keys",
+            "else": "keys",
+            "Move": "built_in",
+            "Delay": "built_in",
+        }
+
+        self.highlightWords = {
+            "operator": [r"\+|\-|\*|/|=|<|>|\&|\|", "MediumOrchid1"],
+            "brackets": [r"\[|\]|\(|\)|\{|\}", "gold"],
+            "function": [r"fn|let", "deep sky blue"],
+            "keys": [
+                r"for|in|while|loop|integer|boolean|return|if|else|break",
+                "MediumOrchid1",
+            ],
+            "built_in": [r"Delay|println!|Move|Opera", "cyan3"],
+            "constant": [r"[0-9]+|True|False", "orange"],
+            "name": [r"[a-zA-Z_#?][a-zA-Z_#?0-9]{2,14}", "gray90"],
+            "string": [r"\"[^\"]*\"", "PaleGreen1"],
+            "comment": [r"[ ]*@[^\n]*", "gray60"],
+        }
+
         # Configuración de la ventana
 
         master.title("RoboticHand IDE")
@@ -149,7 +187,7 @@ class App:
             text="Auto-scroll",
             borderwidth=0,
             bg="gray22",
-            fg="gray80",
+            fg="gray70",
             font=("Arial", 10),
             activebackground="gray40",
             variable=self.lockVar,
@@ -157,6 +195,21 @@ class App:
             offvalue=0,
         )
         self.lockButton.grid(row=0, column=3, padx=5)
+
+        self.lockDebug = tk.IntVar(value=0)
+        self.debugButton = tk.Checkbutton(
+            self.logFrame,
+            text="Debug",
+            borderwidth=0,
+            bg="gray22",
+            fg="gray70",
+            font=("Arial", 10),
+            activebackground="gray40",
+            variable=self.lockDebug,
+            onvalue=1,
+            offvalue=0,
+        )
+        self.debugButton.grid(row=0, column=4, padx=5)
 
         # Entry - Nombre del archivo
         self.fileEntry = tk.Entry(
@@ -183,7 +236,7 @@ class App:
         self.logText = tk.Text(
             self.logFrame,
             font=("Consolas", 13),
-            height=8,
+            height=12,
             background="gray18",
             selectbackground="magenta4",
             selectforeground="gray90",
@@ -191,9 +244,9 @@ class App:
             yscrollcommand=self.outScroll.set,
             borderwidth=0,
         )
-        self.logText.grid(row=1, column=0, columnspan=4, sticky=tk.NSEW)
+        self.logText.grid(row=1, column=0, columnspan=5, sticky=tk.NSEW)
         self.outScroll.config(command=self.logText.yview)
-        self.outScroll.grid(row=1, column=4, sticky=tk.NS)
+        self.outScroll.grid(row=1, column=5, sticky=tk.NS)
         self.logText.tag_configure("info", foreground="deep sky blue")
         self.logText.tag_configure("warning", foreground="gold")
         self.logText.tag_configure("error", foreground="salmon")
@@ -338,10 +391,41 @@ class App:
         self.textScroll.set(*args)
         self.scroll_both("moveto", args[0])
 
-    # Actualiza el widget con los numeros de las líneas
+    # Actualiza el widget con los numeros de las líneas y el color del texto
     def line_update(self, *args):
-        self.codeText.tag_remove("error_line", 1.0, "end")
-        self.lineCanvas.redraw()
+        for mtag in self.codeText.tag_names():
+            self.codeText.tag_remove(mtag, 1.0, "end")
+
+        for tag, value in self.highlightWords.items():
+            start = self.codeText.index("1.0")
+            end = self.codeText.index("end")
+            self.codeText.mark_set("matchStart", start)
+            self.codeText.mark_set("matchEnd", start)
+            self.codeText.mark_set("searchLimit", end)
+
+            count = tk.IntVar()
+            while True:
+                index = self.codeText.search(
+                    value[0], "matchEnd", "searchLimit", count=count, regexp=True
+                )
+                if index == "":
+                    break
+                if count.get() == 0:
+                    break
+                self.codeText.mark_set("matchStart", index)
+                self.codeText.mark_set("matchEnd", "%s+%sc" % (index, count.get()))
+                self.codeText.tag_configure(tag, foreground=value[1])
+                if tag == "name":
+                    if (
+                        self.RESERVED.get(
+                            self.codeText.get("matchStart", "matchEnd"), "name"
+                        )
+                        == "name"
+                    ):
+                        self.codeText.tag_add(tag, "matchStart", "matchEnd")
+                else:
+                    self.codeText.tag_add(tag, "matchStart", "matchEnd")
+
         self.codeText.edit_modified(False)
 
     # Verifica si los cambios en el archivo estan guardados
@@ -445,7 +529,9 @@ class App:
                     + "/program.py"
                 )
 
-                self.process = Popen(command, stdout=PIPE, stderr=PIPE, stdin=PIPE,)
+                self.process = Popen(
+                    "python program.py", stdout=PIPE, stderr=PIPE, stdin=PIPE,
+                )
                 self.isRunning = True
                 self.running()
             except:
