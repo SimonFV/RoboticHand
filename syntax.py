@@ -377,6 +377,7 @@ def p_finger_arguments(p):
 def p_delay(p):
     """
     delay : DELAY L_PAREN expression COMMA text R_PAREN SEMICOLON
+          | DELAY L_PAREN expression COMMA text R_PAREN empty
     """
     if p[7] == None:
         common_error("semicolon", p.lineno(1))

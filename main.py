@@ -393,6 +393,7 @@ class App:
 
     # Actualiza el widget con los numeros de las líneas y el color del texto
     def line_update(self, *args):
+        self.lineCanvas.redraw()
         for mtag in self.codeText.tag_names():
             self.codeText.tag_remove(mtag, 1.0, "end")
 
