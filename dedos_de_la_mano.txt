@@ -1,0 +1,51 @@
+
+
+fn main(){
+	@ Intro
+	Move("T", True);
+	Delay(16, "Seg");
+	Move("T", False);
+	Delay(1, "Seg");
+	Move("P", True);
+	Delay(600, "Mil");
+	Move("I", True);
+	Delay(800, "Mil");
+	Move("M", True);
+	Delay(800, "Mil");
+	Move("A", True);
+	Delay(800, "Mil");
+	Move("Q", True);
+	Delay(2, "Seg");
+
+	@ Empieza a mover cada dedo
+	@ Pulgar
+	Move(["I","M","A","Q"], False);
+	Delay(6, "Seg");
+	Move("P", False);
+	
+	@ Indice
+	Move("I", True);
+	Delay(7, "Seg");
+	Move("I", False);
+	
+	@ Medio
+	Move("M", True);
+	Delay(6, "Seg");
+	Move("M", False);
+
+	@ Anular
+	Move("A", True);
+	Delay(7, "Seg");
+	Move("A", False);
+
+	@ Menique
+	Move("Q", True);
+	Delay(16, "Seg");
+	Move("Q", False);
+	Delay(1, "Seg");
+
+	@ Todos
+	Move("T", True);
+	Delay(3, "Seg");
+}
+

@@ -241,7 +241,7 @@ robohand_app.title("RoboticHand App")
 robohand_app.geometry("800x600")
 robohand_app.configure(bg="gray18")
 
-robohand_debug = IntVar(value=0)
+robohand_debug = IntVar(value=1)
 robohand_lockDebug = Checkbutton(
     robohand_app,
     text="Debug",
