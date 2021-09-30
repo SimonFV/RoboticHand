@@ -530,9 +530,7 @@ class App:
                     + "/program.py"
                 )
 
-                self.process = Popen(
-                    "python program.py", stdout=PIPE, stderr=PIPE, stdin=PIPE,
-                )
+                self.process = Popen(command, stdout=PIPE, stderr=PIPE, stdin=PIPE,)
                 self.isRunning = True
                 self.running()
             except:
